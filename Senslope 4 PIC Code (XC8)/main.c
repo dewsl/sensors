@@ -81,10 +81,10 @@
 #pragma config BBSIZ = BB2K     // Boot Block Size (2K word Boot Block size)
 
 // CONFIG5L
-#pragma config CP0 = ON         // Code Protect 00800-01FFF (Enabled)
-#pragma config CP1 = ON         // Code Protect 02000-03FFF (Enabled)
-#pragma config CP2 = ON         // Code Protect 04000-05FFF (Enabled)
-#pragma config CP3 = ON         // Code Protect 06000-07FFF (Enabled)
+#pragma config CP0 = OFF         // Code Protect 00800-01FFF (Enabled)
+#pragma config CP1 = OFF         // Code Protect 02000-03FFF (Enabled)
+#pragma config CP2 = OFF         // Code Protect 04000-05FFF (Enabled)
+#pragma config CP3 = OFF         // Code Protect 06000-07FFF (Enabled)
 
 // CONFIG5H
 #pragma config CPB = OFF        // Code Protect Boot (Disabled)
