@@ -45,8 +45,8 @@ extern "C" {
 #define BROAD_AXEL2_RAW_NEW                 9
 #define BROAD_SOMS_RAW_NEW                  10
 
-#define BROAD_AXEL1_CALIB_NEW               11
-#define BROAD_AXEL2_CALIB_NEW               12
+#define BROAD_AXEL1_CALIB_NEW               41
+#define BROAD_AXEL2_CALIB_NEW               42
 
 
 #define BROAD_SELF_TEST_ONECOMMAND          16

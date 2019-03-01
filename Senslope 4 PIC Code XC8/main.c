@@ -47,7 +47,8 @@
 /* Configuration Bits				                                          */
 /******************************************************************************/
 
-#include <p18F25K80.h>
+//#include <p18F25K80.h>
+#include <p18cxxx.h>
 
 // CONFIG1L
 #pragma config RETEN = OFF      // VREG Sleep Enable bit (Ultra low-power regulator is Disabled (Controlled by REGSLP bit))
@@ -56,7 +57,7 @@
 #pragma config XINST = OFF      // Extended Instruction Set (Disabled)
 
 // CONFIG1H
-#pragma config FOSC = INTIO2    // Oscillator (Internal RC oscillator)
+#pragma config FOSC = INTIO1    // Oscillator (Internal RC oscillator)
 #pragma config PLLCFG = OFF     // PLL x4 Enable bit (Disabled)
 #pragma config FCMEN = OFF      // Fail-Safe Clock Monitor (Disabled)
 #pragma config IESO = OFF       // Internal External Oscillator Switch Over Mode (Disabled)
@@ -81,10 +82,10 @@
 #pragma config BBSIZ = BB2K     // Boot Block Size (2K word Boot Block size)
 
 // CONFIG5L
-#pragma config CP0 = OFF         // Code Protect 00800-01FFF (Enabled)
-#pragma config CP1 = OFF         // Code Protect 02000-03FFF (Enabled)
-#pragma config CP2 = OFF         // Code Protect 04000-05FFF (Enabled)
-#pragma config CP3 = OFF         // Code Protect 06000-07FFF (Enabled)
+#pragma config CP0 = OFF         // Code Protect 00800-01FFF (Disabled)
+#pragma config CP1 = OFF         // Code Protect 02000-03FFF (Disabled)
+#pragma config CP2 = OFF         // Code Protect 04000-05FFF (Disabled)
+#pragma config CP3 = OFF         // Code Protect 06000-07FFF (Disabled)
 
 // CONFIG5H
 #pragma config CPB = OFF        // Code Protect Boot (Disabled)
@@ -118,15 +119,12 @@ volatile int i=0;
 volatile int unique_nodeid=0, bandgap=0, reference=0, temperature=0, DEBUG=0, counter=0;
 volatile unsigned char xh1=0,xl1=0,yh1=0,yl1=0,zh1=0,zl1=0,xh2=0,xl2=0,yh2=0,yl2=0,zh2=0,zl2=0;	// Accelerometer raw variables
 volatile int x1data=0,y1data=0,z1data=0,x2data=0,y2data=0,z2data=0,x1_self=0,y1_self=0,z1_self=0,x2_self=0,y2_self=0,z2_self=0,acc_stat=0;	// Accelerometer self-test variables
-volatile unsigned int soms_raw=0,somsair=0,somswater=0, somsadc=0;												// Soil moisture raw data
-volatile unsigned char somsairl=0,somsairh=0,somswaterl=0,somswaterh=0;									// Soil moisture EEPROM values
-volatile int soms_cal=0;                                                                           // Soil moisture normalized value
 volatile long bg=0;                                                                              // Bandgap voltage for computing internal 2V ADC reference used by SOMS        
 CANDATA_EXTENDED canBuffer;
 char string[64];
 
 /*****************************************/
-/* Accel Calibration Global Variables
+/* Accel Calibration Global Variables */
 /*****************************************/
 volatile double x_cal=0,y_cal=0,z_cal=0;
 volatile int xdata=0,ydata=0,zdata=0;
@@ -252,9 +250,8 @@ void main(void)
                  break;
                  
             case BROAD_AXEL1_RAW_NEW: // Updated accel1 raw data
-                 axel_writebyte(0x22, 0x00);
-                 get_axel1raw();
-                 //average_axel1(EEPROM_read(0x01,0x05));
+                
+                 average_axel1(EEPROM_read(0x01,0x05));
                  canBuffer.data2= xl1;
                  canBuffer.data3= xh1;
                  canBuffer.data4= yl1;
@@ -267,43 +264,21 @@ void main(void)
 
             case BROAD_AXEL2_RAW_NEW: // Updated accel2 raw data
 
-                 //get_axel2raw();
-                 axel_writebyte(0x22, 0x00);	// Accel initialization, ctrl_reg3
-                 average_axel1(EEPROM_read(0x01,0x05));
-                 canBuffer.data2= xl1;
-                 canBuffer.data3= xh1;
-                 canBuffer.data4= yl1;
-                 canBuffer.data5= yh1;
-                 canBuffer.data6= zl1;
-                 canBuffer.data7= zh1;
-                 canBuffer.data8= (unsigned int)(get_refvoltage()-200);
-                 canBuffer.dlc = 8;
-                 /*average_axel2(EEPROM_read(0x01,0x05));
+                 average_axel2(EEPROM_read(0x01,0x05));
                  canBuffer.data2= xl2;
                  canBuffer.data3= xh2;
                  canBuffer.data4= yl2;
                  canBuffer.data5= yh2;
                  canBuffer.data6= zl2;
                  canBuffer.data7= zh2;
-                 canBuffer.data8= get_refvoltage()-200;
-                 canBuffer.dlc = 8;
-                 */
-                break;
-
-			case BROAD_AXEL1_CALIB_NEW:
-				 axel_writebyte(0x22, 0x40);	// Accel initialization, ctrl_reg3
-                average_axel1(EEPROM_read(0x01,0x05));
-                 canBuffer.data2= xl1;
-                 canBuffer.data3= xh1;
-                 canBuffer.data4= yl1;
-                 canBuffer.data5= yh1;
-                 canBuffer.data6= zl1;
-                 canBuffer.data7= zh1;
                  canBuffer.data8= (unsigned int)(get_refvoltage()-200);
                  canBuffer.dlc = 8;
                  
-				 //get_axel1raw();
-                 /*average_axel1(EEPROM_read(0x01,0x05));
+                break;
+
+			case BROAD_AXEL1_CALIB_NEW:
+
+                 average_axel1(EEPROM_read(0x01,0x05));
 				 
                  xdata = (xh1*256) + xl1;													// reconstruct accel data
 				 ydata = (yh1*256) + yl1;
@@ -316,36 +291,15 @@ void main(void)
                  canBuffer.data5= (unsigned char)((int)y_cal >> 8);
                  canBuffer.data6= (unsigned char)((int)z_cal & 0xFF);
                  canBuffer.data7= (unsigned char)((int)z_cal >> 8);
-                 canBuffer.data8= get_refvoltage()-200;
+                 canBuffer.data8= (unsigned int)(get_refvoltage()-200);
                  canBuffer.dlc = 8;
-                 */
+                 
                  break;
 
 			case BROAD_AXEL2_CALIB_NEW:
-				axel_writebyte(0x22, 0x60);	// Accel initialization, ctrl_reg3
-                average_axel1(EEPROM_read(0x01,0x05));
-                 canBuffer.data2= xl1;
-                 canBuffer.data3= xh1;
-                 canBuffer.data4= yl1;
-                 canBuffer.data5= yh1;
-                 canBuffer.data6= zl1;
-                 canBuffer.data7= zh1;
-                 canBuffer.data8= (unsigned int)(get_refvoltage()-200);
-                 canBuffer.dlc = 8; 
                  
-                //average_axel2(EEPROM_read(0x01,0x05));
-                 /*canBuffer.data2= xl2;
-                 canBuffer.data3= xh2;
-                 canBuffer.data4= yl2;
-                 canBuffer.data5= yh2;
-                 canBuffer.data6= zl2;
-                 canBuffer.data7= zh2;
-                 canBuffer.data8= get_refvoltage()-200;
-                 canBuffer.dlc = 8;
-				 */
-                 //get_axel2raw();
-                   
-                /*
+                 average_axel2(EEPROM_read(0x01,0x05));
+                
 				 xdata = (xh2*256) + xl2;													// reconstruct accel data
 				 ydata = (yh2*256) + yl2;
 			 	 zdata = (zh2*256) + zl2;
@@ -357,9 +311,9 @@ void main(void)
                  canBuffer.data5= (unsigned char)((int)y_cal >> 8);
                  canBuffer.data6= (unsigned char)((int)z_cal & 0xFF);
                  canBuffer.data7= (unsigned char)((int)z_cal >> 8);
-                 canBuffer.data8= get_refvoltage()-200;
+                 canBuffer.data8= (unsigned int)(get_refvoltage()-200);
                  canBuffer.dlc = 8;
-                 */
+                 
                  break;
 
 			case EEPROM_MATRIX_AXEL1 :
@@ -845,7 +799,7 @@ void average_axel1(int x)
 	ysum1 = 0;
 	zsum1 = 0;
     axel_initialize();
-    //axel_writebyte(0x22, 0x40);	// Accel initialization, ctrl_reg3
+    axel_writebyte(0x22, 0x40);	// Accel initialization, ctrl_reg3
 	for ( i=0; i<x;i++)
 	{
             //Delay1KTCYx(AXEL_WAITTIME);
