@@ -21,13 +21,11 @@ extern "C" {
 
 #define TIMEOUT 0x2E84                                  // Sampling rate, 5 seconds1E84
 #define WAITTIME 0x0
-#define SOMSSAMPLES 50
 
 // accel related definitions
 
 #define RESOLUTION 							1024    // Accelerometer calibrated value resolution
 #define AXEL_WAITTIME                       60      // Accel updating time
-#define axel_sample                         10		// Number of accel samples for averaging routine
 #define MULTIPLIER1 						10000	// Multiplier for 3x3 matrix calibration parameters
 #define MULTIPLIER2 						1		// Multiplier for 3x1 matrix calibration parameters
 
@@ -39,11 +37,10 @@ extern "C" {
 #define BROAD_AXEL1_RAW_INIT                2
 #define BROAD_AXEL2_RAW_INIT                3
 
-#define BROAD_SOMS_CALIB_INIT               7
 
 #define BROAD_AXEL1_RAW_NEW                 8
 #define BROAD_AXEL2_RAW_NEW                 9
-#define BROAD_SOMS_RAW_NEW                  10
+
 
 #define BROAD_AXEL1_CALIB_NEW               41
 #define BROAD_AXEL2_CALIB_NEW               42
