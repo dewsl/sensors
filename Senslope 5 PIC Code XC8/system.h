@@ -53,8 +53,9 @@ extern "C" {
 
 #define BROAD_CALIBRATE_REFVOLTAGE          21
 #define BROAD_GET_DIAGNOSTICS               22
-
-
+#define GET_DIAGNOSTICS_ACCEL1              23
+#define GET_DIAGNOSTICS_ACCEL2              24
+    
 #define BROAD_EEPROM_ACCESS		            34
 #define BROAD_CHANGE_DEBUG_MODE             35
 #define BROAD_CHANGE_AVERAGING_SAMPLE       36
@@ -117,6 +118,7 @@ void axel2_writebyte (	unsigned char address,
 unsigned char axel2_readbyte (unsigned char address);
 
 void axel_selftest (void);
+int iis_selftest (void);
 
 unsigned char EEPROM_write(	unsigned char addressh,
 							unsigned char address,
@@ -127,6 +129,7 @@ unsigned char EEPROM_read(	unsigned char addressh,
 void cal_refvoltage (long ref);
 int get_refvoltage (void);
 int get_temperature (void);
+int get_temperature_accel (int accel);
 
 void average_axel1(int x);
 void average_axel2(int x);
