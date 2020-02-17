@@ -118,7 +118,7 @@
 volatile int i=0;
 volatile int unique_nodeid=0, bandgap=0, reference=0, temperature=0, DEBUG=0, counter=0;
 volatile unsigned char xh1=0,xl1=0,yh1=0,yl1=0,zh1=0,zl1=0,xh2=0,xl2=0,yh2=0,yl2=0,zh2=0,zl2=0;	// Accelerometer raw variables
-volatile int x1data=0,y1data=0,z1data=0,x2data=0,y2data=0,z2data=0,x1_self=0,y1_self=0,z1_self=0,x2_self=0,y2_self=0,z2_self=0,acc_stat=0,temp1=0,temp2=0,accel;	// Accelerometer self-test variables
+volatile int x1data=0,y1data=0,z1data=0,x2data=0,y2data=0,z2data=0,x1_self=0,y1_self=0,z1_self=0,x2_self=0,y2_self=0,z2_self=0,acc_stat=0,temp1=0,temp2=0,accel,stat1=0,stat2=0;	// Accelerometer self-test variables
 volatile long bg=0;                                                                              // Bandgap voltage for computing internal 2V ADC reference used by SOMS        
 CANDATA_EXTENDED canBuffer;
 char string[64];
@@ -549,10 +549,31 @@ void main(void)
 
                  canBuffer.data2= (unsigned char)(reference>>8);
                  canBuffer.data3= (unsigned char)(reference&0xFF);
-                 canBuffer.data4= (unsigned char)(temp1>>8);
-                 canBuffer.data5= (unsigned char)(temp1&0xFF);
+                 canBuffer.data4= (unsigned char)(temp2>>8);
+                 canBuffer.data5= (unsigned char)(temp2&0xFF);
                  canBuffer.data6= (unsigned char)(acc_stat);
                  canBuffer.dlc = 6; 
+                 break;
+                 
+            case GET_STATUS_ACCEL1:
+                 //axel_writebyte(0x27, 0x07);
+                 //iis_selftest();
+                 
+                 acc_stat = 0;  //self-test
+                 axel_initialize();          
+                 axel2_initialize();         
+                 stat1 = axel_readbyte(0x27);   //status accel1
+                 stat2 = axel2_readbyte(0x27);  //status accel2
+                 if ((x1_self > 983) && (x1_self < 8519))        acc_stat = acc_stat+32;
+                 if ((y1_self > 983) && (y1_self < 8519))        acc_stat = acc_stat+16;       
+                 if ((z1_self > 983) && (z1_self < 18350))       acc_stat = acc_stat+8;        
+                 if ((x2_self > 983) && (x2_self < 8519))        acc_stat = acc_stat+4;        
+                 if ((y2_self > 983) && (y2_self < 8519))        acc_stat = acc_stat+2;        
+                 if ((z2_self > 983) && (z2_self < 18350))       acc_stat = acc_stat+1;
+                 canBuffer.data2= stat1;
+                 canBuffer.data3= stat2;
+                 canBuffer.data4= acc_stat; 
+                 canBuffer.dlc = 4;
                  break;
                  
             case BROAD_EEPROM_ACCESS:
@@ -622,10 +643,6 @@ void get_axel1raw (void)
     //axel2_writebyte(0x20, 0x00);    // Accel initialization, ctrl_reg1 //power down mode accel 2
 	
     axel_initialize();
-//    axel2_writebyte(0x20, 0x3F);
-//    axel2_writebyte(0x21, 0x03);
-    
-    //address |= 0x80;			// Set to 1 the MSB for read
 	PORTC &= ~0x01;				// Assert chip select
 	temp = (unsigned char)putcSPI((0x28) | (0x80));	// Send low byte of address
 	xl1 = getcSPI();			// Read single byte
@@ -661,7 +678,7 @@ void get_axel2raw (void)
 	
     axel2_initialize();
     PORTB &= ~0x01;				// Assert chip select
-	temp = (unsigned char)putcSPI((0x28) | (0xC0));	// Send low byte of address
+	temp = (unsigned char)putcSPI((0x28) | (0x80));	// Send low byte of address
 	xl2 = getcSPI();			// Read single byte
 	xh2 = getcSPI();
     yl2 = getcSPI();
@@ -692,13 +709,10 @@ void get_axel2raw (void)
 
 void axel_initialize (void)
 {
-//	PORTC |= 0x01;
-//	axel_writebyte(0x20, 0xC0);	// Accel initialization, ctrl_reg1
-    
     PORTC |= 0x01;
 	axel_writebyte(0x20, 0xC0);    // Accel initialization, ctrl_reg1 //normal mode & increment address
-    //axel_writebyte(0x21, 0x03);    // Accel initialization, ctrl_reg2
     axel_writebyte(0x23, 0x41);    // Accel initialization, ctrl_reg4
+    //axel_writebyte(0x27, 0x03);     // Accel initialization, status reg
 }
 
 /**
@@ -713,7 +727,6 @@ void axel_initialize_self (void)
 {
 	PORTC |= 0x01;
     axel_writebyte(0x20, 0xC0);    // Accel initialization, ctrl_reg1 //normal mode & increment address
-	//axel_writebyte(0x20, 0xCF);	// Accel initialization, ctrl_reg1
     axel_writebyte(0x23, 0x51);    // Accel initialization, ctrl_reg4
 }
 
@@ -771,8 +784,8 @@ unsigned char axel_readbyte (unsigned char address)
 void axel2_initialize (void)
 {
 	PORTB |= 0x01;
-	axel2_writebyte(0x20, 0xC0);    // Accel initialization, ctrl_reg1 //normal mode & increment address
-    axel2_writebyte(0x23, 0x41);    // Accel initialization, ctrl_reg4
+	axel_writebyte(0x20, 0xC0);    // Accel initialization, ctrl_reg1 //normal mode & increment address
+    axel_writebyte(0x23, 0x41);    // Accel initialization, ctrl_reg4
 }
 
 /**
@@ -1334,4 +1347,3 @@ int get_temperature_accel(int accel) //temp of accel
 	return temp;
 
 }
-
