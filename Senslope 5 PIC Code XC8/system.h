@@ -55,6 +55,8 @@ extern "C" {
 #define BROAD_GET_DIAGNOSTICS               22
 #define GET_DIAGNOSTICS_ACCEL1              23
 #define GET_DIAGNOSTICS_ACCEL2              24
+#define GET_STATUS_ACCEL1                   27
+//#define STATUS_ACCEL                        28
     
 #define BROAD_EEPROM_ACCESS		            34
 #define BROAD_CHANGE_DEBUG_MODE             35
@@ -130,6 +132,7 @@ void cal_refvoltage (long ref);
 int get_refvoltage (void);
 int get_temperature (void);
 int get_temperature_accel (int accel);
+//int get_status_accel (void);
 
 void average_axel1(int x);
 void average_axel2(int x);
