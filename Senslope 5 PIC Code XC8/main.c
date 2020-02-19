@@ -40,7 +40,7 @@
 #include <string.h>
 #include <math.h>
 
-
+#define _XTAL_FREQ 20000000
 
 
 /******************************************************************************/
@@ -513,16 +513,16 @@ void main(void)
                  canBuffer.dlc = 6;
                  break;
                  
-            case GET_DIAGNOSTICS_ACCEL1:	// Get node health of accel
+            case GET_TEMPERATURE_ACCEL1:	// Get node health of accel
                  reference = 0;
-                 iis_selftest();
+                 //iis_selftest();
                  temp1 = get_temperature_accel(1);
                  acc_stat = 0;
-
+                 /*
                  if ((x1_self > 983) && (x1_self < 8519))        acc_stat = acc_stat+32;
                  if ((y1_self > 983) && (y1_self < 8519))        acc_stat = acc_stat+16;       
                  if ((z1_self > 983) && (z1_self < 18350))       acc_stat = acc_stat+8;        
-                 /*if ((x2_self > 983) && (x2_self < 8519))        acc_stat = acc_stat+4;        
+                 if ((x2_self > 983) && (x2_self < 8519))        acc_stat = acc_stat+4;        
                  if ((y2_self > 983) && (y2_self < 8519))        acc_stat = acc_stat+2;        
                  if ((z2_self > 983) && (z2_self < 18350))       acc_stat = acc_stat+1;       */
 
@@ -534,18 +534,18 @@ void main(void)
                  canBuffer.dlc = 6; 
                  break;
                  
-            case GET_DIAGNOSTICS_ACCEL2:	// Get node health of accel
+            case GET_TEMPERATURE_ACCEL2:	// Get node health of accel
                  reference = 0;
-                 iis_selftest();
+                 //iis_selftest();
                  temp2 = get_temperature_accel(2);
                  acc_stat = 0;
 
             /*   if ((x1_self > 983) && (x1_self < 8519))        acc_stat = acc_stat+32;
                  if ((y1_self > 983) && (y1_self < 8519))        acc_stat = acc_stat+16;       
-                 if ((z1_self > 983) && (z1_self < 18350))       acc_stat = acc_stat+8;   */     
+                 if ((z1_self > 983) && (z1_self < 18350))       acc_stat = acc_stat+8;        
                  if ((x2_self > 983) && (x2_self < 8519))        acc_stat = acc_stat+4;        
                  if ((y2_self > 983) && (y2_self < 8519))        acc_stat = acc_stat+2;        
-                 if ((z2_self > 983) && (z2_self < 18350))       acc_stat = acc_stat+1;       
+                 if ((z2_self > 983) && (z2_self < 18350))       acc_stat = acc_stat+1;     */  
 
                  canBuffer.data2= (unsigned char)(reference>>8);
                  canBuffer.data3= (unsigned char)(reference&0xFF);
@@ -555,14 +555,14 @@ void main(void)
                  canBuffer.dlc = 6; 
                  break;
                  
-            case GET_STATUS_ACCEL1:
+            case GET_STATUS_ACCEL:
                  //axel_writebyte(0x27, 0x07);
-                 //iis_selftest();
+                 iis_selftest();
                  
                  acc_stat = 0;  //self-test
-                 axel_initialize();          
-                 axel2_initialize();         
+                 axel_initialize();   
                  stat1 = axel_readbyte(0x27);   //status accel1
+                 axel2_initialize();         
                  stat2 = axel2_readbyte(0x27);  //status accel2
                  if ((x1_self > 983) && (x1_self < 8519))        acc_stat = acc_stat+32;
                  if ((y1_self > 983) && (y1_self < 8519))        acc_stat = acc_stat+16;       
@@ -640,19 +640,27 @@ void main(void)
 void get_axel1raw (void)
 {	
     unsigned char temp;
+    unsigned int c = 0;
     //axel2_writebyte(0x20, 0x00);    // Accel initialization, ctrl_reg1 //power down mode accel 2
 	
     axel_initialize();
-	PORTC &= ~0x01;				// Assert chip select
-	temp = (unsigned char)putcSPI((0x28) | (0x80));	// Send low byte of address
-	xl1 = getcSPI();			// Read single byte
-	xh1 = getcSPI();
+    
+    do{
+        stat1 = axel_readbyte(0x27);   //status accel1
+        __delay_ms(1);
+        c++;
+    }while ((stat1 != 255) | (c == 10));
+    
+    PORTC &= ~0x01;				// Assert chip select
+    temp = (unsigned char)putcSPI((0x28) | (0x80));	// Send low byte of address
+    xl1 = getcSPI();			// Read single byte
+    xh1 = getcSPI();
     yl1 = getcSPI();
     yh1 = getcSPI();
     zl1 = getcSPI();
     zh1 = getcSPI();
     PORTC |= 0x01;				// Negate chip select
-    
+
 /*
 	xl1 = axel_readbyte(0x28);	// read x
 	xh1 = axel_readbyte(0x29);
@@ -674,9 +682,17 @@ void get_axel1raw (void)
 void get_axel2raw (void)
 {	
     unsigned char temp;
+    unsigned int c = 0;
     //axel_writebyte(0x20, 0x00);    // Accel initialization, ctrl_reg1 //power down mode accel 1
 	
     axel2_initialize();
+    
+    do{
+        stat2 = axel2_readbyte(0x27);   //status accel1
+        __delay_ms(1);
+        c++;
+    }while ((stat2 != 255) | (c == 10));
+    
     PORTB &= ~0x01;				// Assert chip select
 	temp = (unsigned char)putcSPI((0x28) | (0x80));	// Send low byte of address
 	xl2 = getcSPI();			// Read single byte
@@ -710,8 +726,10 @@ void get_axel2raw (void)
 void axel_initialize (void)
 {
     PORTC |= 0x01;
+    //axel2_writebyte(0x20, 0x00);    // Accel2 initialization, ctrl_reg1 //power down
 	axel_writebyte(0x20, 0xC0);    // Accel initialization, ctrl_reg1 //normal mode & increment address
     axel_writebyte(0x23, 0x41);    // Accel initialization, ctrl_reg4
+    
     //axel_writebyte(0x27, 0x03);     // Accel initialization, status reg
 }
 
@@ -784,8 +802,10 @@ unsigned char axel_readbyte (unsigned char address)
 void axel2_initialize (void)
 {
 	PORTB |= 0x01;
-	axel_writebyte(0x20, 0xC0);    // Accel initialization, ctrl_reg1 //normal mode & increment address
-    axel_writebyte(0x23, 0x41);    // Accel initialization, ctrl_reg4
+    //axel_writebyte(0x20, 0x00);    // Accel initialization, ctrl_reg1 //power down
+	axel2_writebyte(0x20, 0xC0);    // Accel initialization, ctrl_reg1 //normal mode & increment address
+    axel2_writebyte(0x23, 0x41);    // Accel initialization, ctrl_reg4
+    
 }
 
 /**
@@ -950,7 +970,7 @@ void average_axel1(int x)
             //PORTC |= 0x01;	// chip select axel1
             //PORTB &= ~0x02;	// disable level shifter for axel2
             //PORTB |= 0x01;	// able level shifter for axel1
-            axel_initialize();
+            //axel_initialize();
             //axel2_writebyte(0x20, 0x3F);
             //axel2_writebyte(0x21, 0x03);
             /*
@@ -1008,7 +1028,7 @@ void average_axel2(int x)
             PORTB &= ~0x01;	// disable level shifter for axel1
             PORTB |= 0x02;	// able level shifter for axel2
              */
-            axel2_initialize();
+            //axel2_initialize();
             /*
             xl2 = axel2_readbyte(0x28);	// read x2
             xh2 = axel2_readbyte(0x29);
@@ -1335,7 +1355,7 @@ int get_temperature_accel(int accel) //temp of accel
         PORTB &= ~0x01;				// Assert chip select
 	}
     
-    
+    __delay_ms(20);
     t = (unsigned char)putcSPI((0x25) | (0x80));	// Send low byte of address
 	templ = getcSPI();			// Read single byte
     temph = getcSPI();			// Read single byte

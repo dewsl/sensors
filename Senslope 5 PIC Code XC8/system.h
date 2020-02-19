@@ -53,9 +53,9 @@ extern "C" {
 
 #define BROAD_CALIBRATE_REFVOLTAGE          21
 #define BROAD_GET_DIAGNOSTICS               22
-#define GET_DIAGNOSTICS_ACCEL1              23
-#define GET_DIAGNOSTICS_ACCEL2              24
-#define GET_STATUS_ACCEL1                   27
+#define GET_TEMPERATURE_ACCEL1              23
+#define GET_TEMPERATURE_ACCEL2              24
+#define GET_STATUS_ACCEL                    27
 //#define STATUS_ACCEL                        28
     
 #define BROAD_EEPROM_ACCESS		            34
