@@ -56,7 +56,7 @@ extern "C" {
 #define GET_TEMPERATURE_ACCEL1              23
 #define GET_TEMPERATURE_ACCEL2              24
 #define GET_STATUS_ACCEL                    27
-//#define STATUS_ACCEL                        28
+//#define ACCEL_STATUS                        28
     
 #define BROAD_EEPROM_ACCESS		            34
 #define BROAD_CHANGE_DEBUG_MODE             35

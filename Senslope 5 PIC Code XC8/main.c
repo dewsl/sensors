@@ -118,7 +118,7 @@
 volatile int i=0;
 volatile int unique_nodeid=0, bandgap=0, reference=0, temperature=0, DEBUG=0, counter=0;
 volatile unsigned char xh1=0,xl1=0,yh1=0,yl1=0,zh1=0,zl1=0,xh2=0,xl2=0,yh2=0,yl2=0,zh2=0,zl2=0;	// Accelerometer raw variables
-volatile int x1data=0,y1data=0,z1data=0,x2data=0,y2data=0,z2data=0,x1_self=0,y1_self=0,z1_self=0,x2_self=0,y2_self=0,z2_self=0,acc_stat=0,temp1=0,temp2=0,accel,stat1=0,stat2=0;	// Accelerometer self-test variables
+volatile int x1data=0,y1data=0,z1data=0,x2data=0,y2data=0,z2data=0,x1_self=0,y1_self=0,z1_self=0,x2_self=0,y2_self=0,z2_self=0,acc_stat=0,temp1=0,temp2=0,accel,stat1=0,stat2=0,status1=0,status2=0,status=0;	// Accelerometer self-test variables
 volatile long bg=0;                                                                              // Bandgap voltage for computing internal 2V ADC reference used by SOMS        
 CANDATA_EXTENDED canBuffer;
 char string[64];
@@ -236,7 +236,7 @@ void main(void)
                  break;
 
             case BROAD_AXEL1_RAW_INIT: // Initial accel1 raw data
-                
+                 axel_initialize();
                  get_axel1raw();
                  canBuffer.data2= xl1;
                  canBuffer.data3= xh1;
@@ -249,6 +249,7 @@ void main(void)
                  break;
 
             case BROAD_AXEL2_RAW_INIT: // Initial accel2 raw data
+                 axel2_initialize();
                  get_axel2raw();
                  canBuffer.data2= xl2;
                  canBuffer.data3= xh2;
@@ -576,6 +577,7 @@ void main(void)
                  canBuffer.dlc = 4;
                  break;
                  
+                 
             case BROAD_EEPROM_ACCESS:
 
 				 canBuffer.data2 = canBuffer.data4;
@@ -643,7 +645,7 @@ void get_axel1raw (void)
     unsigned int c = 0;
     //axel2_writebyte(0x20, 0x00);    // Accel initialization, ctrl_reg1 //power down mode accel 2
 	
-    axel_initialize();
+    //axel_initialize();
     
     do{
         stat1 = axel_readbyte(0x27);   //status accel1
@@ -685,7 +687,7 @@ void get_axel2raw (void)
     unsigned int c = 0;
     //axel_writebyte(0x20, 0x00);    // Accel initialization, ctrl_reg1 //power down mode accel 1
 	
-    axel2_initialize();
+    //axel2_initialize();
     
     do{
         stat2 = axel2_readbyte(0x27);   //status accel1
@@ -805,6 +807,9 @@ void axel2_initialize (void)
     //axel_writebyte(0x20, 0x00);    // Accel initialization, ctrl_reg1 //power down
 	axel2_writebyte(0x20, 0xC0);    // Accel initialization, ctrl_reg1 //normal mode & increment address
     axel2_writebyte(0x23, 0x41);    // Accel initialization, ctrl_reg4
+    axel2_writebyte(0x21, 0x00);
+    axel2_writebyte(0x22, 0x00);
+    axel2_writebyte(0x24, 0x00);
     
 }
 
@@ -821,6 +826,9 @@ void axel2_initialize_self (void)
 	PORTB |= 0x01;
     axel2_writebyte(0x20, 0xC0);    // Accel initialization, ctrl_reg1 //normal mode & increment address
 	axel2_writebyte(0x23, 0x51);    // Accel initialization, ctrl_reg4	
+    axel2_writebyte(0x21, 0x00);
+    axel2_writebyte(0x22, 0x00);
+    axel2_writebyte(0x24, 0x00);
 }
 
 /**
@@ -919,13 +927,14 @@ int iis_selftest (void)
 {
                  axel_initialize();				// Get accelerometer raw data
                  Delay1KTCYx(0);
-                 get_axel1raw();
+                 average_axel1(5);
                  x1data = (xh1*256) + xl1;
                  y1data = (yh1*256) + yl1;
                  z1data = (zh1*256) + zl1;
                  axel_initialize_self();		// Get accelerometer self-test data
                  Delay1KTCYx(0);
-                 get_axel1raw();
+                 average_axel1(5);
+                 //get_axel1raw();
                  x2data = (xh1*256) + xl1;
                  y2data = (yh1*256) + yl1;
                  z2data = (zh1*256) + zl1;
@@ -933,23 +942,27 @@ int iis_selftest (void)
                  y1_self = y2data - y1data;
                  z1_self = z2data - z1data;
                  axel_initialize();
+                 
 
                  axel2_initialize();
                  Delay1KTCYx(0);
-                 get_axel2raw();
+                 average_axel2(5);
+                 //get_axel2raw();
                  x1data = (xh2*256) + xl2;
                  y1data = (yh2*256) + yl2;
                  z1data = (zh2*256) + zl2;
                  axel2_initialize_self();
                  Delay1KTCYx(0);
-                 get_axel2raw();
+                 average_axel2(5);
+                 //get_axel2raw();
                  x2data = (xh2*256) + xl2;
                  y2data = (yh2*256) + yl2;
                  z2data = (zh2*256) + zl2;
                  x2_self = x2data - x1data;
                  y2_self = y2data - y1data;
                  z2_self = z2data - z1data;
-                 axel2_initialize();      
+                 axel2_initialize(); 
+                 
 }
 
 //AVERAGE DATA
