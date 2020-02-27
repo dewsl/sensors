@@ -173,17 +173,18 @@ void main(void)
     //PORTA |= 0x01;				//input 3.3V in VDD 
 	//PORTB |= 0x01;				// Negate chip select for accel 1
     //PORTC |= 0x01;				// Negate chip select for accel 2
-    axel_initialize();          //IIS3DHHC
-	axel2_initialize();         //IIS328DQ
+
     
 	can_initialize_extended(&canBuffer);
 
     Delay10KTCYx(0);
-
+    
+    axel_initialize(); 
 	get_axel1raw();
 	//if (DEBUG) {
         sprintf(string,(const char *)"A1 IRaw: xh=%d xl=%d yh=%d yl=%d zh=%d zl=%d\n\r", xh1, xl1, yh1, yl1, zh1, zl1); puts1USART(string); 
     //}
+    axel2_initialize();
 	get_axel2raw();
 	//if (DEBUG) {
         sprintf(string,(const char *)"A2 IRaw: xh=%d xl=%d yh=%d yl=%d zh=%d zl=%d\n\r", xh2, xl2, yh2, yl2, zh2, zl2); puts1USART(string); //}
@@ -262,7 +263,7 @@ void main(void)
                  break;
                  
             case BROAD_AXEL1_RAW_NEW: // Updated accel1 raw data
-                
+                 axel_initialize();
                  average_axel1(EEPROM_read(0x01,0x05));
                  canBuffer.data2= xl1;
                  canBuffer.data3= xh1;
@@ -275,7 +276,7 @@ void main(void)
                  break;
 
             case BROAD_AXEL2_RAW_NEW: // Updated accel2 raw data
-
+                 axel2_initialize();
                  average_axel2(EEPROM_read(0x01,0x05));
                  canBuffer.data2= xl2;
                  canBuffer.data3= xh2;
@@ -289,7 +290,7 @@ void main(void)
                 break;
 
 			case BROAD_AXEL1_CALIB_NEW:
-
+                 axel_initialize();
                  average_axel1(EEPROM_read(0x01,0x05));
 				 
                  xdata = (xh1*256) + xl1;													// reconstruct accel data
@@ -309,9 +310,8 @@ void main(void)
                  break;
 
 			case BROAD_AXEL2_CALIB_NEW:
-                 
+                 axel2_initialize();
                  average_axel2(EEPROM_read(0x01,0x05));
-                
 				 xdata = (xh2*256) + xl2;													// reconstruct accel data
 				 ydata = (yh2*256) + yl2;
 			 	 zdata = (zh2*256) + zl2;
@@ -556,11 +556,11 @@ void main(void)
                  canBuffer.dlc = 6; 
                  break;
                  
-            case GET_STATUS_ACCEL:
+            case GET_STATUS_ACCEL:  // status and self-test feature 
                  //axel_writebyte(0x27, 0x07);
                  iis_selftest();
-                 
                  acc_stat = 0;  //self-test
+                 
                  axel_initialize();   
                  stat1 = axel_readbyte(0x27);   //status accel1
                  axel2_initialize();         
@@ -643,8 +643,7 @@ void get_axel1raw (void)
 {	
     unsigned char temp;
     unsigned int c = 0;
-    //axel2_writebyte(0x20, 0x00);    // Accel initialization, ctrl_reg1 //power down mode accel 2
-	
+
     //axel_initialize();
     
     do{
@@ -671,7 +670,7 @@ void get_axel1raw (void)
 	zl1 = axel_readbyte(0x2C);	// read z
 	zh1 = axel_readbyte(0x2D);
  */
-
+    
 }
 
 /**
@@ -685,8 +684,7 @@ void get_axel2raw (void)
 {	
     unsigned char temp;
     unsigned int c = 0;
-    //axel_writebyte(0x20, 0x00);    // Accel initialization, ctrl_reg1 //power down mode accel 1
-	
+
     //axel2_initialize();
     
     do{
@@ -731,8 +729,6 @@ void axel_initialize (void)
     //axel2_writebyte(0x20, 0x00);    // Accel2 initialization, ctrl_reg1 //power down
 	axel_writebyte(0x20, 0xC0);    // Accel initialization, ctrl_reg1 //normal mode & increment address
     axel_writebyte(0x23, 0x41);    // Accel initialization, ctrl_reg4
-    
-    //axel_writebyte(0x27, 0x03);     // Accel initialization, status reg
 }
 
 /**
@@ -807,10 +803,6 @@ void axel2_initialize (void)
     //axel_writebyte(0x20, 0x00);    // Accel initialization, ctrl_reg1 //power down
 	axel2_writebyte(0x20, 0xC0);    // Accel initialization, ctrl_reg1 //normal mode & increment address
     axel2_writebyte(0x23, 0x41);    // Accel initialization, ctrl_reg4
-    axel2_writebyte(0x21, 0x00);
-    axel2_writebyte(0x22, 0x00);
-    axel2_writebyte(0x24, 0x00);
-    
 }
 
 /**
@@ -826,9 +818,6 @@ void axel2_initialize_self (void)
 	PORTB |= 0x01;
     axel2_writebyte(0x20, 0xC0);    // Accel initialization, ctrl_reg1 //normal mode & increment address
 	axel2_writebyte(0x23, 0x51);    // Accel initialization, ctrl_reg4	
-    axel2_writebyte(0x21, 0x00);
-    axel2_writebyte(0x22, 0x00);
-    axel2_writebyte(0x24, 0x00);
 }
 
 /**
@@ -975,25 +964,14 @@ void average_axel1(int x)
 	ysum1 = 0;
 	zsum1 = 0;
     //axel_initialize();
-    
-    //axel_writebyte(0x22, 0x40);	// Accel initialization, ctrl_reg3
+
 	for ( i=0; i<x;i++)
 	{
             //Delay1KTCYx(AXEL_WAITTIME);
             //PORTC |= 0x01;	// chip select axel1
             //PORTB &= ~0x02;	// disable level shifter for axel2
             //PORTB |= 0x01;	// able level shifter for axel1
-            //axel_initialize();
-            //axel2_writebyte(0x20, 0x3F);
-            //axel2_writebyte(0x21, 0x03);
-            /*
-            xl1 = axel_readbyte(0x28);	// read x
-            xh1 = axel_readbyte(0x29);
-            yl1 = axel_readbyte(0x2A);	// read y
-            yh1 = axel_readbyte(0x2B);
-            zl1 = axel_readbyte(0x2C);	// read z
-            zh1 = axel_readbyte(0x2D);
-            */
+
             get_axel1raw();
             xsum1 = xl1+(xh1*256) + xsum1;
             ysum1 = yl1+(yh1*256) + ysum1;
@@ -1031,8 +1009,8 @@ void average_axel2(int x)
 	xsum2 = 0;
 	ysum2 = 0;
 	zsum2 = 0;
-    
-    //axel2_writebyte(0x22, 0x40);	// Accel initialization, ctrl_reg3
+    //axel2_initialize();
+
 	for ( i=0; i<x;i++)
         
 	{
@@ -1041,15 +1019,7 @@ void average_axel2(int x)
             PORTB &= ~0x01;	// disable level shifter for axel1
             PORTB |= 0x02;	// able level shifter for axel2
              */
-            //axel2_initialize();
-            /*
-            xl2 = axel2_readbyte(0x28);	// read x2
-            xh2 = axel2_readbyte(0x29);
-            yl2 = axel2_readbyte(0x2A);	// read y2
-            yh2 = axel2_readbyte(0x2B);
-            zl2 = axel2_readbyte(0x2C);	// read z2
-            zh2 = axel2_readbyte(0x2D);
-            */
+
             get_axel2raw();
             xsum2 = xl2+(xh2*256) + xsum2;
             ysum2 = yl2+(yh2*256) + ysum2;
