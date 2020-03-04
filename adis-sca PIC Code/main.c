@@ -78,10 +78,10 @@
 #pragma config BBSIZ = BB2K     	// Boot Block Size (2K word Boot Block size)
 
 // CONFIG5L
-#pragma config CP0 = ON        		// Code Protect 00800-01FFF (Enabled)
-#pragma config CP1 = ON        		// Code Protect 02000-03FFF (Enabled)
-#pragma config CP2 = ON        		// Code Protect 04000-05FFF (Enabled)
-#pragma config CP3 = ON        		// Code Protect 06000-07FFF (Enabled)
+#pragma config CP0 = OFF        		// Code Protect 00800-01FFF (Enabled)
+#pragma config CP1 = OFF        		// Code Protect 02000-03FFF (Enabled)
+#pragma config CP2 = OFF        		// Code Protect 04000-05FFF (Enabled)
+#pragma config CP3 = OFF        		// Code Protect 06000-07FFF (Enabled)
 
 // CONFIG5H
 #pragma config CPB = OFF        	// Code Protect Boot (Disabled)
@@ -255,13 +255,13 @@ void main(void)
                  
             case BROAD_AXEL1_RAW_NEW: // Updated accel1 raw data
 
-                 get_axel1raw();
-                 canBuffer.data2= xl1;
-                 canBuffer.data3= xh1;
-                 canBuffer.data4= yl1;
-                 canBuffer.data5= yh1;
-                 canBuffer.data6= zl1;
-                 canBuffer.data7= zh1;
+                 get_axel2raw();
+                 canBuffer.data2= xl2;
+                 canBuffer.data3= xh2;
+                 canBuffer.data4= yl2;
+                 canBuffer.data5= yh2;
+                 canBuffer.data6= zl2;
+                 canBuffer.data7= zh2;
                  canBuffer.data8= (unsigned int)(get_refvoltage()-200);
                  canBuffer.dlc = 8;
                  break;
@@ -281,19 +281,19 @@ void main(void)
 
 			case BROAD_AXEL1_CALIB_NEW:
 				 
-				 get_axel1raw();
+				 get_axel2raw();
 
-				 xdata = (xh1*256) + xl1;													// reconstruct accel data
-				 ydata = (yh1*256) + yl1;
-			 	 zdata = (zh1*256) + zl1;
+				 //xdata = (xh1*256) + xl1;													// reconstruct accel data
+				 //ydata = (yh1*256) + yl1;
+			 	 //zdata = (zh1*256) + zl1;
                  //get_axelcal_m(xdata,ydata,zdata,1);
 
-                 canBuffer.data2= xl1;//(unsigned char)((int)x_cal & 0xFF);
-                 canBuffer.data3= xh1;//(unsigned char)((int)x_cal >> 8);
-                 canBuffer.data4= yl1;//(unsigned char)((int)y_cal & 0xFF);
-                 canBuffer.data5= yh1;//(unsigned char)((int)y_cal >> 8);
-                 canBuffer.data6= zl1;//(unsigned char)((int)z_cal & 0xFF);
-                 canBuffer.data7= zh1;//(unsigned char)((int)z_cal >> 8);
+                 canBuffer.data2= xl2;//(unsigned char)((int)x_cal & 0xFF);
+                 canBuffer.data3= xh2;//(unsigned char)((int)x_cal >> 8);
+                 canBuffer.data4= yl2;//(unsigned char)((int)y_cal & 0xFF);
+                 canBuffer.data5= yh2;//(unsigned char)((int)y_cal >> 8);
+                 canBuffer.data6= zl2;//(unsigned char)((int)z_cal & 0xFF);
+                 canBuffer.data7= zh2;//(unsigned char)((int)z_cal >> 8);
                  canBuffer.data8= (unsigned int)(get_refvoltage()-200);
                  canBuffer.dlc = 8;
                  break;
@@ -306,6 +306,34 @@ void main(void)
 				 //ydata = (yh2*256) + yl2;
 			 	 //zdata = (zh2*256) + zl2;
                  //get_axelcal_m(xdata,ydata,zdata,2);
+
+                 canBuffer.data2= xl2;//(unsigned char)((int)x_cal & 0xFF);
+                 canBuffer.data3= xh2;//(unsigned char)((int)x_cal >> 8);
+                 canBuffer.data4= yl2;//(unsigned char)((int)y_cal & 0xFF);
+                 canBuffer.data5= yh2;//(unsigned char)((int)y_cal >> 8);
+                 canBuffer.data6= zl2;//(unsigned char)((int)z_cal & 0xFF);
+                 canBuffer.data7= zh2;//(unsigned char)((int)z_cal >> 8);
+                 canBuffer.data8= (unsigned int)(get_refvoltage()-200);
+                 canBuffer.dlc = 8;
+                 break;
+                 
+			case BROAD_AXEL1_CALIB_V5:
+				 
+				 get_axel2raw();
+
+                 canBuffer.data2= xl2;//(unsigned char)((int)x_cal & 0xFF);
+                 canBuffer.data3= xh2;//(unsigned char)((int)x_cal >> 8);
+                 canBuffer.data4= yl2;//(unsigned char)((int)y_cal & 0xFF);
+                 canBuffer.data5= yh2;//(unsigned char)((int)y_cal >> 8);
+                 canBuffer.data6= zl2;//(unsigned char)((int)z_cal & 0xFF);
+                 canBuffer.data7= zh2;//(unsigned char)((int)z_cal >> 8);
+                 canBuffer.data8= (unsigned int)(get_refvoltage()-200);
+                 canBuffer.dlc = 8;
+                 break;
+                 
+			case BROAD_AXEL2_CALIB_V5:
+				 
+				 get_axel2raw();
 
                  canBuffer.data2= xl2;//(unsigned char)((int)x_cal & 0xFF);
                  canBuffer.data3= xh2;//(unsigned char)((int)x_cal >> 8);
