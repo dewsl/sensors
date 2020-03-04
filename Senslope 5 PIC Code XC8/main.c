@@ -729,6 +729,11 @@ void axel_initialize (void)
     //axel2_writebyte(0x20, 0x00);    // Accel2 initialization, ctrl_reg1 //power down
 	axel_writebyte(0x20, 0xC0);    // Accel initialization, ctrl_reg1 //normal mode & increment address
     axel_writebyte(0x23, 0x41);    // Accel initialization, ctrl_reg4
+    
+    axel2_writebyte(0x20, 0x08);    // Accel initialization, ctrl_reg1 //SW_RESET
+    __delay_ms(1);
+    axel2_writebyte(0x20, 0x04);    // Accel initialization, ctrl_reg1 //BOOT
+    __delay_ms(10);
 }
 
 /**
@@ -803,6 +808,11 @@ void axel2_initialize (void)
     //axel_writebyte(0x20, 0x00);    // Accel initialization, ctrl_reg1 //power down
 	axel2_writebyte(0x20, 0xC0);    // Accel initialization, ctrl_reg1 //normal mode & increment address
     axel2_writebyte(0x23, 0x41);    // Accel initialization, ctrl_reg4
+    
+    axel_writebyte(0x20, 0x08);    // Accel initialization, ctrl_reg1 //SW_RESET
+    __delay_ms(1);
+    axel_writebyte(0x20, 0x04);    // Accel initialization, ctrl_reg1 //BOOT
+    __delay_ms(10);
 }
 
 /**
