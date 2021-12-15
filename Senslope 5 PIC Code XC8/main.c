@@ -648,9 +648,10 @@ void get_axel1raw (void)
     
     do{
         stat1 = axel_readbyte(0x27);   //status accel1
-        __delay_ms(1);
+        __delay_us(5);
+        if (stat1 == 255) break;
         c++;
-    }while ((stat1 != 255) | (c == 10));
+    }while (c != 10);
     
     PORTC &= ~0x01;				// Assert chip select
     temp = (unsigned char)putcSPI((0x28) | (0x80));	// Send low byte of address
@@ -689,9 +690,10 @@ void get_axel2raw (void)
     
     do{
         stat2 = axel2_readbyte(0x27);   //status accel1
-        __delay_ms(1);
+        __delay_us(5);
+        if (stat2 == 255) break;
         c++;
-    }while ((stat2 != 255) | (c == 10));
+    }while (c != 10);
     
     PORTB &= ~0x01;				// Assert chip select
 	temp = (unsigned char)putcSPI((0x28) | (0x80));	// Send low byte of address
@@ -731,7 +733,7 @@ void axel_initialize (void)
     axel_writebyte(0x23, 0x41);    // Accel initialization, ctrl_reg4
     
     axel2_writebyte(0x20, 0x08);    // Accel initialization, ctrl_reg1 //SW_RESET
-    __delay_ms(1);
+    __delay_us(5);
     axel2_writebyte(0x20, 0x04);    // Accel initialization, ctrl_reg1 //BOOT
     __delay_ms(10);
 }
@@ -810,7 +812,7 @@ void axel2_initialize (void)
     axel2_writebyte(0x23, 0x41);    // Accel initialization, ctrl_reg4
     
     axel_writebyte(0x20, 0x08);    // Accel initialization, ctrl_reg1 //SW_RESET
-    __delay_ms(1);
+    __delay_us(5);
     axel_writebyte(0x20, 0x04);    // Accel initialization, ctrl_reg1 //BOOT
     __delay_ms(10);
 }

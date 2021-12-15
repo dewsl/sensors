@@ -111,9 +111,6 @@ volatile int i=0;
 volatile int unique_nodeid=0, bandgap=0, reference=0, temperature=0, DEBUG=0, counter=0;
 volatile unsigned char xh1=0,xl1=0,yh1=0,yl1=0,zh1=0,zl1=0,xh2=0,xl2=0,yh2=0,yl2=0,zh2=0,zl2=0;	// Accelerometer raw variables
 volatile int x1data=0,y1data=0,z1data=0,x2data=0,y2data=0,z2data=0,x1_self=0,y1_self=0,z1_self=0,x2_self=0,y2_self=0,z2_self=0,acc_stat=0;	// Accelerometer self-test variables
-volatile unsigned int soms_raw=0,somsair=0,somswater=0, somsadc=0;												// Soil moisture raw data
-volatile unsigned char somsairl=0,somsairh=0,somswaterl=0,somswaterh=0;									// Soil moisture EEPROM values
-volatile int soms_cal=0;                                                                           // Soil moisture normalized value
 volatile long bg=0;                                                                              // Bandgap voltage for computing internal 2V ADC reference used by SOMS        
 CANDATA_EXTENDED canBuffer;
 char string[64];
@@ -169,14 +166,10 @@ void main(void)
 
     Delay10KTCYx(0);
 
-	get_axel1raw();
-	if (DEBUG) {sprintf(string,(const far rom char *)"A1 IRaw: xh=%d xl=%d yh=%d yl=%d zh=%d zl=%d\n\r", xh1, xl1, yh1, yl1, zh1, zl1); puts1USART(string); }
-	get_axel2raw();
-	if (DEBUG) {sprintf(string,(const far rom char *)"A2 IRaw: xh=%d xl=%d yh=%d yl=%d zh=%d zl=%d\n\r", xh2, xl2, yh2, yl2, zh2, zl2); puts1USART(string); }
-    get_somsraw(0);
-   	if (DEBUG) {sprintf(string,(const far rom char *)"S IRaw: %d\n\r", soms_raw); puts1USART(string); }
-   	get_somscal();
-   	if (DEBUG) {sprintf(string,(const far rom char *)"S ICal: %d\n\r", soms_cal); puts1USART(string); }
+	
+	if (DEBUG) {get_axel1raw();sprintf(string,(const far rom char *)"A1 IRaw: xh=%d xl=%d yh=%d yl=%d zh=%d zl=%d\n\r", xh1, xl1, yh1, yl1, zh1, zl1); puts1USART(string); }
+	
+	if (DEBUG) {get_axel2raw();sprintf(string,(const far rom char *)"A2 IRaw: xh=%d xl=%d yh=%d yl=%d zh=%d zl=%d\n\r", xh2, xl2, yh2, yl2, zh2, zl2); puts1USART(string); }
 
     while(1)
     {
@@ -248,8 +241,9 @@ void main(void)
                  break;
                  
             case BROAD_AXEL1_RAW_NEW: // Updated accel1 raw data
-
+                 axel_writebyte(0x22, 0x00);
                  get_axel1raw();
+                 //average_axel1(EEPROM_read(0x01,0x05));
                  canBuffer.data2= xl1;
                  canBuffer.data3= xh1;
                  canBuffer.data4= yl1;
@@ -262,7 +256,18 @@ void main(void)
 
             case BROAD_AXEL2_RAW_NEW: // Updated accel2 raw data
 
-                 get_axel2raw();
+                 //get_axel2raw();
+                 //axel_writebyte(0x22, 0x40);	// Accel initialization, ctrl_reg3
+                 average_axel1(EEPROM_read(0x01,0x05));
+                 canBuffer.data2= xl1;
+                 canBuffer.data3= xh1;
+                 canBuffer.data4= yl1;
+                 canBuffer.data5= yh1;
+                 canBuffer.data6= zl1;
+                 canBuffer.data7= zh1;
+                 canBuffer.data8= get_refvoltage()-200;
+                 canBuffer.dlc = 8;
+                 /*average_axel2(EEPROM_read(0x01,0x05));
                  canBuffer.data2= xl2;
                  canBuffer.data3= xh2;
                  canBuffer.data4= yl2;
@@ -271,17 +276,29 @@ void main(void)
                  canBuffer.data7= zh2;
                  canBuffer.data8= get_refvoltage()-200;
                  canBuffer.dlc = 8;
-                 break;
+                 */
+                break;
 
 			case BROAD_AXEL1_CALIB_NEW:
+				 axel_writebyte(0x22, 0x40);	// Accel initialization, ctrl_reg3
+                average_axel1(EEPROM_read(0x01,0x05));
+                 canBuffer.data2= xl1;
+                 canBuffer.data3= xh1;
+                 canBuffer.data4= yl1;
+                 canBuffer.data5= yh1;
+                 canBuffer.data6= zl1;
+                 canBuffer.data7= zh1;
+                 canBuffer.data8= get_refvoltage()-200;
+                 canBuffer.dlc = 8;
+                 
+				 //get_axel1raw();
+                 /*average_axel1(EEPROM_read(0x01,0x05));
 				 
-				 get_axel1raw();
-
-				 xdata = (xh1*256) + xl1;													// reconstruct accel data
+                 xdata = (xh1*256) + xl1;													// reconstruct accel data
 				 ydata = (yh1*256) + yl1;
 			 	 zdata = (zh1*256) + zl1;
                  get_axelcal_m(xdata,ydata,zdata,1);
-
+                  
                  canBuffer.data2= (unsigned char)((int)x_cal & 0xFF);
                  canBuffer.data3= (unsigned char)((int)x_cal >> 8);
                  canBuffer.data4= (unsigned char)((int)y_cal & 0xFF);
@@ -290,17 +307,39 @@ void main(void)
                  canBuffer.data7= (unsigned char)((int)z_cal >> 8);
                  canBuffer.data8= get_refvoltage()-200;
                  canBuffer.dlc = 8;
+                 */
                  break;
 
 			case BROAD_AXEL2_CALIB_NEW:
-				 
-				 get_axel2raw();
-
+				axel_writebyte(0x22, 0x60);	// Accel initialization, ctrl_reg3
+                average_axel1(EEPROM_read(0x01,0x05));
+                 canBuffer.data2= xl1;
+                 canBuffer.data3= xh1;
+                 canBuffer.data4= yl1;
+                 canBuffer.data5= yh1;
+                 canBuffer.data6= zl1;
+                 canBuffer.data7= zh1;
+                 canBuffer.data8= get_refvoltage()-200;
+                 canBuffer.dlc = 8; 
+                 
+                //average_axel2(EEPROM_read(0x01,0x05));
+                 /*canBuffer.data2= xl2;
+                 canBuffer.data3= xh2;
+                 canBuffer.data4= yl2;
+                 canBuffer.data5= yh2;
+                 canBuffer.data6= zl2;
+                 canBuffer.data7= zh2;
+                 canBuffer.data8= get_refvoltage()-200;
+                 canBuffer.dlc = 8;
+				 */
+                 //get_axel2raw();
+                   
+                /*
 				 xdata = (xh2*256) + xl2;													// reconstruct accel data
 				 ydata = (yh2*256) + yl2;
 			 	 zdata = (zh2*256) + zl2;
                  get_axelcal_m(xdata,ydata,zdata,2);
-
+                  
                  canBuffer.data2= (unsigned char)((int)x_cal & 0xFF);
                  canBuffer.data3= (unsigned char)((int)x_cal >> 8);
                  canBuffer.data4= (unsigned char)((int)y_cal & 0xFF);
@@ -309,6 +348,7 @@ void main(void)
                  canBuffer.data7= (unsigned char)((int)z_cal >> 8);
                  canBuffer.data8= get_refvoltage()-200;
                  canBuffer.dlc = 8;
+                 */
                  break;
 
 			case EEPROM_MATRIX_AXEL1 :
@@ -495,61 +535,6 @@ void main(void)
                  canBuffer.dlc = 6;
                  break;
                  
-            case BROAD_SOMS_RAW_INIT:	
-
-                 canBuffer.data2 = (unsigned char)(soms_raw & 0xFF);
-                 canBuffer.data3 = (unsigned char)(soms_raw >> 8);
-                 canBuffer.dlc = 3;
-                 break;
-                     
-            case BROAD_SOMS_CALIB_INIT:	
-
-                 canBuffer.data2 = (unsigned char)(soms_cal & 0xFF);
-                 canBuffer.data3 = (unsigned char)(soms_cal >> 8);
-                 canBuffer.dlc = 3;
-                 break;
-                 
-            case BROAD_SOMS_RAW_NEW:
-           
-                 get_somsraw(0);                 
-                 canBuffer.data2 = (unsigned char)(soms_raw & 0xFF);
-               	 canBuffer.data3 = (unsigned char)(soms_raw >> 8);
-                 canBuffer.dlc = 3;
-                 break;
-                
-            case BROAD_SOMS_CALIB_NEW:
-   				  
-                 get_somsraw(0);
-                 get_somscal();
-                 canBuffer.data2= (unsigned char)(soms_cal & 0xFF);
-                 canBuffer.data3= (unsigned char)(soms_cal >> 8);
-                 canBuffer.dlc = 3;
-                 break;
-                              
-            case BROAD_SOMS_AIR:
-            
-                 canBuffer.data2 = EEPROM_write(0x03,0x50,canBuffer.data4);
-                 canBuffer.data3 = EEPROM_write(0x03,0x51,canBuffer.data5);
-                 canBuffer.dlc = 3;
-                 break;
-
-            case BROAD_SOMS_WATER:
-
-                 canBuffer.data2 = EEPROM_write(0x03,0x52,canBuffer.data4);
-                 canBuffer.data3 = EEPROM_write(0x03,0x53,canBuffer.data5);
-                 canBuffer.dlc = 3;
-                 break;
-
-			case BROAD_SOMS_CAP:
-				 get_somsraw(1);      
-                 canBuffer.data2 = (unsigned char)(soms_raw & 0xFF);			//get raw voltage
-               	 canBuffer.data3 = (unsigned char)(soms_raw >> 8);
-				 canBuffer.data4 = (unsigned char)(somsadc & 0xFF);				//get raw adc
-               	 canBuffer.data5 = (unsigned char)(somsadc >> 8);
-				 canBuffer.data6 = (unsigned char)(bg & 0xFF);					//get bandgap
-               	 canBuffer.data7 = (unsigned char)(bg >> 8);
-                 canBuffer.dlc = 7;
-                 break;
 				
             case BROAD_EEPROM_ACCESS:
 
@@ -567,7 +552,13 @@ void main(void)
 
 				 DEBUG = (int)canBuffer.data4;
                  break;
+            
+            case BROAD_CHANGE_AVERAGING_SAMPLE:
 
+                 canBuffer.data2 = EEPROM_write(0x01,0x05,canBuffer.data4);
+                 canBuffer.data3 = canBuffer.data4;
+                 canBuffer.dlc = 3;
+                 break;            
 
              default:
                  break;
@@ -843,13 +834,15 @@ void average_axel1(int x)
 	xsum1 = 0;
 	ysum1 = 0;
 	zsum1 = 0;
-	for ( i=0; i<x;)
+    axel_initialize();
+    axel_writebyte(0x22, 0x40);	// Accel initialization, ctrl_reg3
+	for ( i=0; i<x;i++)
 	{
-            Delay1KTCYx(AXEL_WAITTIME);
-            PORTC |= 0x01;	// chip select axel1
-            PORTB &= ~0x02;	// disable level shifter for axel2
-            PORTB |= 0x01;	// able level shifter for axel1
-
+            //Delay1KTCYx(AXEL_WAITTIME);
+            //PORTC |= 0x01;	// chip select axel1
+            //PORTB &= ~0x02;	// disable level shifter for axel2
+            //PORTB |= 0x01;	// able level shifter for axel1
+            
             xl1 = axel_readbyte(0x28);	// read x
             xh1 = axel_readbyte(0x29);
             yl1 = axel_readbyte(0x2A);	// read y
@@ -860,7 +853,7 @@ void average_axel1(int x)
             xsum1 = xl1+(xh1*256) + xsum1;
             ysum1 = yl1+(yh1*256) + ysum1;
             zsum1 = zl1+(zh1*256) + zsum1;
-            i++;
+            
 
 	}
 	xsum1 = xsum1/x;
@@ -894,13 +887,16 @@ void average_axel2(int x)
 	xsum2 = 0;
 	ysum2 = 0;
 	zsum2 = 0;
-	for ( i=0; i<x;)
+    axel2_initialize();
+    axel2_writebyte(0x22, 0x40);	// Accel initialization, ctrl_reg3
+	for ( i=0; i<x;i++)
+        
 	{
-            Delay1KTCYx(AXEL_WAITTIME);
+            /*Delay1KTCYx(AXEL_WAITTIME);
             PORTA |= 0x20;	// chip select axel2
             PORTB &= ~0x01;	// disable level shifter for axel1
             PORTB |= 0x02;	// able level shifter for axel2
-
+             */
             xl2 = axel2_readbyte(0x28);	// read x2
             xh2 = axel2_readbyte(0x29);
             yl2 = axel2_readbyte(0x2A);	// read y2
@@ -911,7 +907,7 @@ void average_axel2(int x)
             xsum2 = xl2+(xh2*256) + xsum2;
             ysum2 = yl2+(yh2*256) + ysum2;
             zsum2 = zl2+(zh2*256) + zsum2;
-            i++;
+            
 	}
 	xsum2 = xsum2/x;
 	ysum2 = ysum2/x;
@@ -1213,67 +1209,9 @@ int get_temperature (void)
 //SOMS
 
 
-void soms_adc_initialize (void) {
-
-	TRISA |= 0x04; 				// set pin A2 as input   
-	ADCON2bits.ADFM = 1;		// right justified (right=1) ADC result format
-	ADCON2bits.ACQT = 1;		// Acquisition time = 2TAD
-	ADCON2bits.ADCS = 2;		// Clock conversion = fosc/32
 
 
-	ADCON1bits.VNCFG = 0;		// Vref- = AVss (GND)
-	ADCON0bits.CHS = 2;			// ADC input = AN2
-	ADCON1bits.CHSN = 0;		// single ended ADC mode
-	
-	ANCON0bits.ANSEL2 = 1;		// set ADC input to analog channel 2 (AN2)
-	ADCON1bits.VCFG = 2; 		// Vref+ = 2V internal
-	
-}
-
-void get_somsraw (int func_test)
-{	
-
-	int high,low,c;
-	unsigned int soilbuffer[SOMSSAMPLES];
-	high=0;
-	low = 0;
-	c = 0;
-    memset(soilbuffer,0,SOMSSAMPLES);	//set soilbuffer to zero
-	soms_raw = 0;						//set global soms_raw to 0
-
-	PORTC |= 0x04;                             //enable soil moisture sensor switch port RC2
-	
-	get_refvoltage();			//for getting bandgap from EEPROM
-	soms_adc_initialize();
-
-	Delay10KTCYx(1); //adjust based on the turn on time of switch (RT9715GGB turn-on time 200us) delay function(1)=5ms
-
-
-	while(c < SOMSSAMPLES){
-		ADCON0bits.ADON = 1;		// Turn on ADC
-		Delay1KTCYx(1);
-		ADCON0bits.GO = 1;			// Start conversion
-		while (ADCON0bits.GO == 0)	// Wait conversion finish stat pin is not yet idle
-		ADCON0bits.ADON = 0;		// Turn off ADC
-		Delay1KTCYx(1);	
-	
-		high = ADRESH;
-		low = ADRESL;
-
-		soilbuffer[c] = ((unsigned int)high*256)+(unsigned int) low;
-		Delay1KTCYx(1);
-
-		c++;
-		
-	}
-
-	if (!func_test) PORTC &= ~0x04;				//Turnoff SOMS
-	Delay10KTCYx(1); //adjust based on turn off time of switch
-
-	soms_raw = get_median(soilbuffer, SOMSSAMPLES);
-}
-
-
+/*
 int get_median(unsigned int *analogValues, int numReadings){
 //bubblesort from <http://www.tigoe.com/pcomp/code/arduinowiring/42/>
 	int out=0, in=0, swapper=0,soil=0;
@@ -1306,21 +1244,4 @@ int get_median(unsigned int *analogValues, int numReadings){
     return soil;	//<-- return median average
 }
 
-
-
-void get_somscal (void)
-{	
-   
-    somsairh = EEPROM_read(0x03,0x50);
-    somsairl = EEPROM_read(0x03,0x51);
-    somswaterh = EEPROM_read(0x03,0x52);
-    somswaterl = EEPROM_read(0x03,0x53);
-    
-  
-	somsair = (somsairh*256) + somsairl;
-	somswater = (somswaterh*256) + somswaterl;
-
-	soms_cal = (int)(1000*(((float)(soms_raw-somsair))/((float)(somswater-somsair))));	// Normalization equation
-}
-
-
+*/

@@ -407,6 +407,7 @@ void main(void)
 
             case BROAD_AXEL1_SELFTEST_OUTPUT_CHANGE: // Self-test accel1 raw data
 
+                 axel_selftest();
                  canBuffer.data2= (unsigned char)((int)x1_self & 0xFF);
                  canBuffer.data3= (unsigned char)((int)x1_self >> 8);
                  canBuffer.data4= (unsigned char)((int)y1_self & 0xFF);
@@ -419,6 +420,7 @@ void main(void)
 
             case BROAD_AXEL2_SELFTEST_OUTPUT_CHANGE: // Self-test accel2 raw data
 
+                 axel_selftest();
                  canBuffer.data2= (unsigned char)((int)x2_self & 0xFF);
                  canBuffer.data3= (unsigned char)((int)x2_self >> 8);
                  canBuffer.data4= (unsigned char)((int)y2_self & 0xFF);
@@ -1155,9 +1157,9 @@ int get_temperature (void)
 	CTMUCONHbits.CTMUEN = 1;	// Enable charge time measurement unit
 	CTMUCONLbits.EDG1STAT = 1;	// Edge 1 occurence
 
-	ADCON0 = 0x75;				// Channel to internal diode
-	ADCON1 = 0x00;
-	ADCON2 = 0x8A;				// Right justified ADC result format
+	ADCON0 =    0x75;		//0xE5;		// Channel to internal diode
+	ADCON1 = 0x40;
+	ADCON2 =   0x8A;		//	0xBE; 	// Right justified ADC result format
 
 	ADCON0bits.GO = 1;			// Start conversion
 	while(ADCON0bits.GO);

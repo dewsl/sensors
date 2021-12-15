@@ -38,17 +38,17 @@ extern "C" {
 //Broadcast
 #define BROAD_AXEL1_RAW_INIT                2
 #define BROAD_AXEL2_RAW_INIT                3
-#define BROAD_SOMS_RAW_INIT                 4
+//#define BROAD_SOMS_RAW_INIT                 4
 
-#define BROAD_SOMS_CALIB_INIT               7
+//#define BROAD_SOMS_CALIB_INIT               7
 
 #define BROAD_AXEL1_RAW_NEW                 8
 #define BROAD_AXEL2_RAW_NEW                 9
-#define BROAD_SOMS_RAW_NEW                  10
+//#define BROAD_SOMS_RAW_NEW                  10
 
 #define BROAD_AXEL1_CALIB_NEW               11
 #define BROAD_AXEL2_CALIB_NEW               12
-#define BROAD_SOMS_CALIB_NEW                13
+//#define BROAD_SOMS_CALIB_NEW                13
 
 #define BROAD_SELF_TEST_ONECOMMAND          16
 #define BROAD_AXEL1_SELFTEST_OUTPUT_CHANGE  17
@@ -58,12 +58,13 @@ extern "C" {
 #define BROAD_CALIBRATE_REFVOLTAGE          21
 #define BROAD_GET_DIAGNOSTICS               22
 
-#define BROAD_SOMS_AIR                      23
-#define BROAD_SOMS_WATER                    24
-#define	BROAD_SOMS_CAP						27		//for functionality testing
+//#define BROAD_SOMS_AIR                      23
+//#define BROAD_SOMS_WATER                    24
+//#define	BROAD_SOMS_CAP						27		//for functionality testing
 
 #define BROAD_EEPROM_ACCESS		            34
 #define BROAD_CHANGE_DEBUG_MODE             35
+#define BROAD_CHANGE_AVERAGING_SAMPLE       36
 
 
 
@@ -136,9 +137,11 @@ int get_refvoltage (void);
 int get_temperature (void);
 
 void soms_adc_initialize (void);
-void get_somsraw (int func_test);
-void get_somscal (void);
+//void get_somsraw (int func_test);
+//void get_somscal (void);
 int get_median(unsigned int *analogValues, int numReadings);
+void average_axel1(int x);
+void average_axel2(int x);
 
 #ifdef	__cplusplus
 }
