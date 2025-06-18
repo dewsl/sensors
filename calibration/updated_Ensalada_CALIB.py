@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Tue Jun 17 17:12:49 2025
+
+@author: nichm
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Fri Mar 08 08:51:10 2019
 
 @author: Dynaslope
@@ -11,11 +18,9 @@ Created on Thu Aug 21 14:27:07 2014
 
 @author: kennex
 """
-#from tkinter import *
-import tkinter
+
 import serial
 import numpy as np
-import sys
 import re
 import time
 import os
@@ -26,10 +31,11 @@ from collections import defaultdict
 from tabulate import tabulate
 
 global M,empty_matrix,S_MATRIX,P_MATRIX, df      
-empty_matrix = np.empty((1,2), dtype=object)       #--> np.object has been removed in newer versions of NumPy
-M = np.empty((1,2), dtype=object)           # initialize to 1 row of matrices # dapat maappend mamaya
+empty_matrix = np.empty((1,2), dtype=object)      
+M = np.empty((1,2), dtype=object)           # initialize to 1 row of matrices 
 S_MATRIX = np.empty((1,2), dtype=object) # calibration parameters
 P_MATRIX = np.empty((1,2), dtype=object) # contains flags for data error, or failure from magnitude verification
+
 global node_id
 node_id = [0]
 global com_port_variable
@@ -52,7 +58,6 @@ def main():
     global com_port,jig_name,S_MATRIX,node_id,P_MATRIX
     jig_name = 'DINUGUAN'
     print("Available com ports:")
-    # com_available = serial_ports()
     com_available = serial_ports()
     print (com_available)
     com_port = input("Enter com_port number (ex. 5, 10): ")
@@ -60,21 +65,13 @@ def main():
     start = datetime.now()
     
     go_home()
-#    serial_check_selftest('##','s')
-    
     calibrate_batt()  #calibrate first the batt voltage of sensor
     
     DATA = serial_reader('##','d')
-#    print ("kasjhdhakhd")
     P_MATRIX = SUMMARY_MATRIX(DATA,node_id)
     print (P_MATRIX)
 
-#    initial_guess = np.matrix('0.99 0.01 0.01 0.01 0.99 0.01 0.01 0.01 0.99 1 1 1')
-    
     initial_guess = np.matrix('0.9999 0.0001 0.0001 0.0001 0.9999 0.0001 0.0001 0.0001 0.9999 0.0001 0.0001 0.0001')
-    # initial_guess = np.array('0.9999 0.0001 0.0001 0.0001 0.9999 0.0001 0.0001 0.0001 0.9999 0.0001 0.0001 0.0001')
-
-#    initial_guess = np.matrix('1.00 0.00 0.00 0.00 1.00 0.00 0.00 0.00 1.00 0 0 0')
     S_MATRIX = store_params(M,initial_guess)
     print (S_MATRIX)
     
@@ -85,202 +82,8 @@ def main():
     change_debug_mode()
     print ('runtime =', str(datetime.now() - start))
 
-def main_2():
-    global com_port,jig_name,S_MATRIX,node_id,P_MATRIX
-    jig_name = 'DINUGUAN'
-    print("Available com ports:")
-    # com_available = serial_ports()
-    com_available = serial_ports()
-    print (com_available)
-    com_port = input("Enter com_port number (ex. 5, 10): ")
-    
-    start = datetime.now()
-    
-    go_home()
-    
-    VMM = serial_reader_df('##','v')
-    evaluate(VMM)
-    change_debug_mode()
-    print ('runtime =', str(datetime.now() - start))
-
-
-class simpleapp_tk(tkinter.Tk):
-
-    def __init__(self,parent):
-        tkinter.Tk.__init__(self,parent)
-        self.parent = parent
-        self.initialize()
-        
-    def close_window(self):
-        self.destroy()  # destroying the main window
-        sys.exit()
-
-    def initialize(self):
-        global com_port_variable
-        self.grid()
-        
-        self.entryVariable = tkinter.StringVar()
-        self.entry = tkinter.Entry(self,textvariable=self.entryVariable)
-        self.entry.grid(column=0,row=0,sticky='EW')
-        self.entry.bind("<Return>",self.OnPressEnter)
-        self.entryVariable.set(u"DINUGUAN")        
-        
-        button = tkinter.Button(self,text=u"Start Calibration",command=self.OnButtonClick)
-        button.grid(column=1,row=0)
-        
-        button = tkinter.Button(self,text=u"Stop",command=self.close_window)
-        button.grid(column=2,row=0)
-        
-        OPTIONS = list(serial_ports())        
-        
-        self.com_port_variable = tkinter.StringVar()
-        self.com_port_variable.set('Choose COM PORT here.')
-        drop_down = tkinter.OptionMenu(self,self. com_port_variable,*OPTIONS)
-        drop_down.grid(column=0,row=2,sticky='W')
-        
-        
-        self.labelVariable = tkinter.StringVar()
-        label = tkinter.Label(self,textvariable=self.labelVariable,anchor="w",fg="white",bg="blue")
-        label.grid(column=0,row=1,columnspan=3,sticky='EW')
-        self.labelVariable.set(u" Enter Jig Name above")
-        
-        self.grid_columnconfigure(0,weight=1)
-        self.resizable(True,False) #resize (horizontal,vertical)
-
-        
-    def OnButtonClick(self):
-
-        global com_port,jig_name,S_MATRIX,node_id,P_MATRIX
-        jig_name = self.entryVariable.get()
-        com_port = self.com_port_variable.get()
-        
-        com_port = re.sub(r"\D","", com_port)
-        status = 'com_port: ' + com_port
-        self.labelVariable.set(status)
-        status = status + '\n' + 'DATA Gathered'
-        self.labelVariable.set(status)
-        start = datetime.now()
-        
-        serial_check_selftest('##','s')
-        
-#        calibrate_batt()  #calibrate first the batt voltage of sensor
-#        
-#        DATA = serial_reader('##','d')
-#        
-#        P_MATRIX = SUMMARY_MATRIX(DATA,node_id)
-#        print P_MATRIX
-#
-#
-#        initial_guess = np.matrix('0.99 0.01 0.01 0.01 0.99 0.01 0.01 0.01 0.99 1 1 1')
-#        S_MATRIX = store_params(M,initial_guess)
-#        print S_MATRIX
-#        
-#        calibfactors(S_MATRIX,node_id)
-#        
-#        VMM = serial_reader_df('##','v')
-#        evaluate(VMM)
-        print ('runtime =', str(datetime.now() - start))
-#        print VMM
-#        change_debug_mode()
-#        sys.exit()
-
-#####################################        
-#        Send_to_DUE(S_MATRIX,node_id)       #store data to node
-#
-#        clear_M()
-#        VMM = serial_reader('##','e')
-#        
-#        node_id_m = np.matrix(node_id)
-#        node_id_m = node_id_m.T
-#        print node_id_m
-#               
-#        node_id_m = np.matrix(node_id)
-#        node_id_m = node_id_m.T
-#        VMM = np.concatenate((VMM,node_id_m),axis=1)
-#        #print VMM
-#        
-#        verify_magnitude(VMM)
-#        
-#        status = status + '\n' + 'Checked'
-#        self.labelVariable.set(status)
-#        
-#        s0 = P_MATRIX.shape[0]
-#        s1 = P_MATRIX.shape[1]
-#        uid = P_MATRIX[:,2]
-#        #print uid
-#        for i in range(0,s0):
-#            for j in range(0,s1-1):
-#                fail = int(P_MATRIX[i,j])
-#                if fail == 0:
-#                    fid = format(int(uid[i]),'x')
-#                    printstr = 'Node ' + fid + ' ( ' + str(uid[i])+ ' )' +' accel: ' + str(j+1) + ' PASSED!'                    
-#                    #printstr = 'Node ' + str(int(uid[i])) + ' accel: ' + str(j+1) + ' PASSED!'
-#                    print printstr
-#                else:
-#                    fid = format(int(uid[i]),'x')
-#                    printstr = 'Node ' + fid + ' ( ' + str(uid[i])+ ' )' + ' accel: ' + str(j+1) + ' FAILED!' 
-#                    #printstr = 'Node ' + str(int(uid[i])) + ' accel: ' + str(j+1) + ' FAILED!'
-#                    print printstr
-#        LOG_VAL(VMM,P_MATRIX,uid,node_id_m) #write data to csv
-
-####################################################
-        
-#        status = status + '\n' + 'Y Matrix Created'
-#        self.labelVariable.set(status)
-        
-#        Y = Create_Y_Matrix(DATA)
-        
-#        status = status + '\n' + 'Min Max Created'
-#        self.labelVariable.set(status)
-        
-#        MM = ComputeMinMax(DATA,Y)
-        
-#        status = status + '\n' + 'MIN MAX PASSED to PIC'
-#        self.labelVariable.set(status)
-        #print 'MM='
-        #print MM
-#        Write_Save(MM)
-        #print S_MATRIX ######################################
-#        clear_M() # node_id is reset to contain only 0s
-#        status = status + '\n' + 'Validation Data Gathering'
-#        self.labelVariable.set(status)
-#        VMM = serial_reader('##','d')
-
-        #print node_id ######################################
-#       node_id_m = np.matrix(node_id)
-#       node_id_m = node_id_m.T
-#       VMM = np.concatenate((VMM,node_id_m),axis=1)
-        #print VMM
-#        status = status + '\n' + 'Checked'
-#        self.labelVariable.set(status)
- ######################################
-#        verify(VMM)
-#        s0 = S_MATRIX.shape[0]
-#        s1 = S_MATRIX.shape[1]
-#        uid = S_MATRIX[:,2]
-#        for i in range(0,s0):
-#            for j in range(0,s1-1):
-#                fail = int(S_MATRIX[i,j])
-#                if fail == 0:
-#                    fid = format(int(uid[i]),'x')
-#                    printstr = 'Node ' + fid + ' accel: ' + str(j+1) + ' PASSED!'                    
-                    #printstr = 'Node ' + str(int(uid[i])) + ' accel: ' + str(j+1) + ' PASSED!'
-#                    print printstr
-#                else:
-#                    fid = format(int(uid[i]),'x')
-#                    printstr = 'Node ' + fid + ' accel: ' + str(j+1) + ' FAILED!' 
-#                    #printstr = 'Node ' + str(int(uid[i])) + ' accel: ' + str(j+1) + ' FAILED!'
-#                    print printstr
-#        Count_Val_Rec(VMM)
-#        LOG_VAL(VMM,S_MATRIX,uid,node_id_m) #write data to csv
-
-        
-    def OnPressEnter(self,event):
-        self.labelVariable.set(self.entryVariable.get() + " Enter Pressed!")
-
 #############################################################################
 ## Gauss Newton Code 
-
 
 def residuals(adxl_data, beta):
     length = len(adxl_data)
@@ -300,7 +103,6 @@ def residuals(adxl_data, beta):
 #r = residuals(data,initial_guess)
 
 def jacobian(adxl_data,beta):
-    #print 'jacobian called'
     length = len(adxl_data)
     jac = np.zeros((length,12))
     array_bt = np.zeros((1,9))
@@ -322,7 +124,6 @@ def jacobian(adxl_data,beta):
         jac[i,11] =   -2*((beta[0,2]*array_bt[0,1] + beta[0,5]*array_bt[0,2] + beta[0,8]*array_bt[0,3]))
     return jac
   
-  
 def gn_step(adxl_data,beta):
     r = residuals(adxl_data,beta)
     J = jacobian(adxl_data,beta)
@@ -332,21 +133,18 @@ def gn_step(adxl_data,beta):
     delta = np.linalg.lstsq(JS,Jtr)[0]
     ret = np.subtract(beta,np.transpose(delta))
     return ret
-
     
 def gauss_newton(adxl_data, beta):
     A = adxl_data
     change = 100
     step = 0
     diverge_beta = np.matrix('0 0 0 0 0 0 0 0 0 0 0 0')
-    # diverge_beta = np.array('0 0 0 0 0 0 0 0 0 0 0 0')
     while (change > 0.0000001) and (step < 10):
         oldbeta = beta
         beta = gn_step(A,beta)
         change = 0
         for i in range(0,12):
             change = change + abs((beta[0,i]-oldbeta[0,i])/oldbeta[0,i])
-        #print change
         step = step + 1
     printstr = 'number of steps taken to converge:' + str(step)
     print (printstr)
@@ -354,15 +152,16 @@ def gauss_newton(adxl_data, beta):
         return beta
     else:
         return diverge_beta
- ############################################################################
+    
+############################################################################
+
 def store_params(MATRIX,initial_guess):
     length = len(MATRIX)
     result = np.empty((length,2), dtype=object)
     for i in range(0,2):
         for j in range(0,length):
             try:
-                result[j,i] = np.matrix.reshape(gauss_newton(MATRIX[j,i],initial_guess), (4,3)) #resolution 
-                # result[j,i] = np.array.reshape(gauss_newton(MATRIX[j,i],initial_guess), (4,3))
+                result[j,i] = np.matrix.reshape(gauss_newton(MATRIX[j,i],initial_guess), (4,3)) #resolution            
             except TypeError:
                 print ("1 accel lang, ok lang yan")
     return result
@@ -371,8 +170,7 @@ def Send_to_DUE(MATRIX,uid):
     global com_port
     length = len(MATRIX)
     
-    filename = '.\\' + str(jig_name) + '_PARAMETERS.csv'
-    
+    filename = '.\\' + str(jig_name) + '_PARAMETERS.csv'    
     ser = OpenSerial(com_port)
     ser.close()
     ser.open()
@@ -382,7 +180,6 @@ def Send_to_DUE(MATRIX,uid):
     rows = 0
     columns = 0
     uid = np.matrix(uid)
-    # uid = np.array(uid)
     uid = uid.T
     
     try:
@@ -393,7 +190,6 @@ def Send_to_DUE(MATRIX,uid):
     for columns in range(0,length):
         id_to_send = uid[columns,0]
         for rows in range(0,2):
-            #id_to_send = int(MATRIX[columns,2])
             print ('id_to send =' ,id_to_send)
             ser.write(str(id_to_send).encode())
             ser.write('#'.encode())
@@ -401,7 +197,7 @@ def Send_to_DUE(MATRIX,uid):
             ser.write(which_axel.encode())
             ser.write('#'.encode())
             
-            f.write(str(id_to_send))#np.matrix(data_set)
+            f.write(str(id_to_send))
             f.write(',')
             f.write(str(which_axel))
             f.write(',')
@@ -418,7 +214,7 @@ def Send_to_DUE(MATRIX,uid):
                     f.write(str(dummy[j,i]))
                     f.write(',')
                     
-                    time.sleep(0.5) # kulang yung 0.15 
+                    time.sleep(0.5) 
             ser.write('<'.encode())
             f.write('\n') #??
             while ser.read(2).decode("utf-8") != '&&':
@@ -429,30 +225,7 @@ def Send_to_DUE(MATRIX,uid):
     ser.close()
 
 #############################################################################
-def serial_ports():
-    if sys.platform.startswith('win'):
-        ports = ['COM' + str(i + 1) for i in range(256)]
-    else:
-        raise EnvironmentError('Unsupported platform')
-    result = []
-    for port in ports:
-        try:
-            s = serial.Serial(port)
-            s.close()
-            result.append(port)
-        except (OSError, serial.SerialException):
-            pass
-    return result
 
-def clear_M():
-    global M
-    M = np.empty((1,2), dtype=object)
-    global node_id
-    node_id = [0]
-
-
-    
-        
 def Store_to_Matrix(data,MATRIX): # data is data read from serial
     global node_id
     mheight = len(MATRIX)
@@ -473,10 +246,8 @@ def Store_to_Matrix(data,MATRIX): # data is data read from serial
             MATRIX = np.concatenate((MATRIX,empty_matrix), axis = 0)
         if MATRIX[index_col,index_row] == None:
             MATRIX[index_col,index_row] = np.matrix(data_set)
-            # MATRIX[index_col,index_row] = np.array(data_set)
         elif MATRIX[index_col,index_row] == None:
-            MATRIX[index_col,index_row] = np.matrix(data_set)
-            # MATRIX[index_col,index_row] = np.array(data_set)          
+            MATRIX[index_col,index_row] = np.matrix(data_set)        
             
     elif axel == 2 and uid not in node_id:
         index_row = 1
@@ -490,10 +261,8 @@ def Store_to_Matrix(data,MATRIX): # data is data read from serial
             MATRIX = np.concatenate((MATRIX,empty_matrix), axis = 0)
         if MATRIX[index_col,index_row] == None:
             MATRIX[index_col,index_row] = np.matrix(data_set)
-            # MATRIX[index_col,index_row] = np.array(data_set)
         elif MATRIX[index_col,index_row] == None:
             MATRIX[index_col,index_row] = np.matrix(data_set)
-            # MATRIX[index_col,index_row] = np.array(data_set)
             
         index_col = index_col + 1
 
@@ -504,14 +273,11 @@ def Store_to_Matrix(data,MATRIX): # data is data read from serial
         try:
             if MATRIX[index_col,index_row] == None:
                 MATRIX[index_col,index_row] = np.matrix(data_set)
-                # MATRIX[index_col,index_row] = np.array(data_set)
             else:
                 MATRIX[index_col,index_row] = np.concatenate((np.matrix(MATRIX[index_col,index_row]),np.matrix(data_set)),axis = 0)
-                # MATRIX[index_col,index_row] = np.concatenate((np.array(MATRIX[index_col,index_row]),np.array(data_set)),axis = 0)
         except ValueError:
             MATRIX[index_col,index_row] = np.concatenate((np.matrix(MATRIX[index_col,index_row]),np.matrix(data_set)),axis = 0)
-            # MATRIX[index_col,index_row] = np.concatenate((np.array(MATRIX[index_col,index_row]),np.array(data_set)),axis = 0)
-#        print("ok")
+
     elif axel == 1 and uid in node_id:
         index_row = 0
         index_col = node_id.index(uid)
@@ -519,13 +285,10 @@ def Store_to_Matrix(data,MATRIX): # data is data read from serial
         try:
             if MATRIX[index_col,index_row] == None:
                 MATRIX[index_col,index_row] = np.matrix(data_set)
-                # MATRIX[index_col,index_row] = np.array(data_set)
             else:
                 MATRIX[index_col,index_row] = np.concatenate((np.matrix(MATRIX[index_col,index_row]),np.matrix(data_set)),axis = 0)
-                # MATRIX[index_col,index_row] = np.concatenate((np.array(MATRIX[index_col,index_row]),np.array(data_set)),axis = 0)
         except ValueError:
             MATRIX[index_col,index_row] = np.concatenate((np.matrix(MATRIX[index_col,index_row]),np.matrix(data_set)),axis = 0)
-            # MATRIX[index_col,index_row] = np.concatenate((np.array(MATRIX[index_col,index_row]),np.array(data_set)),axis = 0)
     return MATRIX
     
 def Create_Y_Matrix(MATRIX):
@@ -538,7 +301,6 @@ def Create_Y_Matrix(MATRIX):
             num_rows = w.shape[0]
             num_columns = w.shape[1]
             printstr = 'num_rows: ' + str(num_rows) + ' num_columns: ' + str(num_columns)
-            #print printstr
             y = np.zeros(shape=(num_rows,num_columns))
             ## create Y matrix
             for a in range(0, num_columns):
@@ -550,7 +312,6 @@ def Create_Y_Matrix(MATRIX):
                     else:
                         y[b][a] = 0
             checky = np.matrix(y)
-            # checky = np.array(y)
             yheight = len(checky)
             if yheight == 6:
                 checky = np.sum(checky,axis = 0)
@@ -562,13 +323,11 @@ def Create_Y_Matrix(MATRIX):
                 else:
                     fid = format(node_id[i],'x')
                     printstr = 'failed node: ' + fid + ' accel: ' + str(j+1) + ' failure mode: data out of bounds'
-                    #printstr = 'failed node: ' + str(node_id[i]) + ' accel: ' + str(j+1) + ' failure mode: data out of bounds'
                     print (printstr)
                     S_MATRIX[i,j] = 1
             else:
                 fid = format(node_id[i],'x')
                 printstr = 'failed node: ' + fid + ' accel: ' + str(j+1) + ' failure mode: missing data'
-                #printstr = 'failed node: ' + str(node_id[i]) + ' accel: ' + str(j+1) + ' failure mode: missing data'
                 print (printstr)
                 S_MATRIX[i,j] = 1
 
@@ -589,12 +348,10 @@ def verify_magnitude(MATRIX):
             result = int(np.sum(result,axis = 0))
             if result == ss0: #tama ba?
                 fid = format(node_id[i],'x')
-                #printstr = 'node: ' + str(node_id[i]) + ' accel: ' + str(j+1) + ' passed Orthogonality'
                 printstr = 'node: ' + fid + '( '+ str(node_id[i]) + ' )' +' accel: ' + str(j+1) + ' passed MAGNITUDE CHECK'
                 print (printstr)
             else:
                 fid = format(node_id[i],'x')
-                #printstr = 'node: ' + str(node_id[i]) + ' accel: ' + str(j+1) + ' FAILED Orthogonality'
                 printstr = 'node: ' + fid +'( '+ str(node_id[i]) + ' )' + ' accel: ' + str(j+1) + ' FAILED MAGNITUDE CHECK'                
                 print (printstr)
 #                current_id = node_id[i]
@@ -607,14 +364,12 @@ def SUMMARY_MATRIX(MATRIX,uid):
     s0 = MATRIX.shape[0]
     s1 = MATRIX.shape[1]
     uid = np.matrix(uid)
-    # uid = np.array(uid)
+    
     uid = uid.T
     #print 's0: ', s0 
     #print 's1: ', s1
     summary = np.matrix(np.zeros(shape=(s0,s1)))
-    # summary = np.array(np.zeros(shape=(s0,s1)))
     summary = np.concatenate((summary,uid),axis=1)
-    #print summary
     return summary
 
 def ComputeMinMax(MATRIX,Y):
@@ -636,8 +391,7 @@ def ComputeMinMax(MATRIX,Y):
 
 ###########################
 ##SERIAL FUNCTIONS
-##
-##############
+###########################
  
 def OpenSerial(comport):
     #global com_port
@@ -683,7 +437,6 @@ def CloseSerial(comport) :
     ser.close()
 
 
-
 def serial_reader(terminator,command):
     global M,com_port
     ser = OpenSerial(com_port)
@@ -701,7 +454,6 @@ def serial_reader(terminator,command):
         M = Store_to_Matrix(data,M)
     ser.close()
     MATRIX = M
-    #clear_M()
     return MATRIX
 
 def go_home():
@@ -720,7 +472,6 @@ def go_home():
         print (data)
     print ("done")
     ser.close()
-    #clear_M()
     
 def serial_reader_df(terminator,command):
     global M,com_port, df
@@ -746,18 +497,10 @@ def serial_reader_df(terminator,command):
             data += " {}".format(x)
             data_parsed = re.split(",| ",data)
             df.loc[i] = list(map(float, data_parsed))
-            # cleaned_data = [x for x in data_parsed if re.match(r"^-?\d+(\.\d+)?$", x)]
-            # if len(cleaned_data) != len(data_parsed):
-            #     print(f"Skipping invalid data: {data_parsed}")
-            
-            # df.loc[i] = list(map(float, cleaned_data))
+           
             i += 1
             
-#        M = Store_to_Matrix(data,M)
-#    print df
     ser.close()
-#    MATRIX = M
-    #clear_M()
     return df
 
 def serial_check_selftest(terminator,command):
@@ -791,8 +534,7 @@ def serial_check_selftest(terminator,command):
         df.to_csv("SELFTEST EVALUATION.csv",mode='a', index = False, header = False)
 
 
-def evaluate(df):
-        
+def evaluate(df):  
     df["vref_diff"]=abs(df.vref-3.3)
     df["xy"]=np.degrees(np.arctan(df.x/df.y))
     df["xz"]=np.degrees(np.arctan(df.x/df.z))
@@ -802,7 +544,6 @@ def evaluate(df):
     df["xz_diff"] = np.nan
     df["yz_diff"] = np.nan
     for i in df.position.groupby(df.position).first():
-#        print i
         df.xz_diff[df.position == i] = abs (df.xz[df.position == i] - df.xz[(df.node_id == 65535)&(df.accel == 2)&(df.position == i)].values[0])
         df.xy_diff[df.position == i] = abs (df.xy[df.position == i] - df.xy[(df.node_id == 65535)&(df.accel == 2)&(df.position == i)].values[0])
         df.yz_diff[df.position == i] = abs (df.yz[df.position == i] - df.yz[(df.node_id == 65535)&(df.accel == 2)&(df.position == i)].values[0])
@@ -823,7 +564,7 @@ def evaluate(df):
     df["eval_vref"][(df.vref_diff<0.3)]=1
     df["mag"] = np.sqrt(df.x**2+df.y**2+df.z**2)
     df["eval_mag"] = 0
-#    df.eval_mag[(df.mag>1014) & (df.mag<1034)] = 1
+#    df.eval_mag[(df.mag>1014) & (df.mag<1034)] = 1     #v1-4 reso
     df.eval_mag[(df.mag>13058) & (df.mag<13258)] = 1
     
     if not os.path.isfile("DF_EVALUATION.csv"):
@@ -831,18 +572,8 @@ def evaluate(df):
     else:
         df.to_csv("DF_EVALUATION.csv", mode='a',header = False, index = False)
     
-    # df_eval = pd.DataFrame(columns = ["node_id","eval_vref","eval_mag","eval_xyz"])
     df_eval = pd.DataFrame(columns = ["node_id", "eval_vref", "eval_mag", "eval_xyz", "eval_xyz_reason"])
-    
-    # def axis_failures(row):
-    #     reasons = []
-    #     if row['xy_diff'] >= 1.5:
-    #         reasons.append(f"A{row['accel']}_xy:{row['xy_diff']:.2f}")
-    #     if row['xz_diff'] >= 1.5:
-    #         reasons.append(f"A{row['accel']}_xz:{row['xz_diff']:.2f}")
-    #     if row['yz_diff'] >= 1.5:
-    #         reasons.append(f"A{row['accel']}_yz:{row['yz_diff']:.2f}")
-    #     return "; ".join(reasons) if reasons else ""
+
     
     def axis_failures(row):
         accel = int(row['accel'])
@@ -861,32 +592,6 @@ def evaluate(df):
     
     if not os.path.isfile("EVALUATION.csv"):
         df_eval.to_csv("EVALUATION.csv", index = False)
-        
-#     j=0
-#     for i in df.node_id[df.node_id!=65535].groupby(df.node_id).first(): 
-#         if df[(df.node_id == i) & (df.eval_vref==0)].size > 0:
-#             status_vref = "FAILED"
-#         else:
-#             status_vref = "PASSED"
-            
-# #        print i,"vref", status_vref
-        
-#         if df[(df.node_id == i) & (df.eval_mag==0)].size > 0:
-#             status_mag = "FAILED"
-#         else:
-#             status_mag = "PASSED"
-        
-# #        print i,"mag", status_mag
-        
-#         if df[(df.node_id == i) & (df.eval_xyz==0)].size > 0:
-#             status_xyz = "FAILED"
-#         else:
-#             status_xyz = "PASSED"
-            
-# #        print i,"xyz", status_xyz
-        
-#         df_eval.loc[j] = [int(i), status_vref, status_mag, status_xyz]
-#         j+=1
 
     j = 0
     for i in df.node_id[df.node_id != 65535].unique():
@@ -895,13 +600,10 @@ def evaluate(df):
         status_xyz = "FAILED" if df[(df.node_id == i) & (df.eval_xyz == 0)].shape[0] > 0 else "PASSED"
 
         reasons = df[(df.node_id == i) & (df.eval_xyz == 0)]["eval_xyz_reason"].dropna().tolist()
-
-        # Group by position
         reason_dict = defaultdict(list)
         for pos, reason in reasons:
             reason_dict[pos].append(reason)
 
-        # Format multiline string
         reason_str = "\n".join(
             f"P{pos}: " + " | ".join(reason_dict[pos])
             for pos in sorted(reason_dict)
@@ -916,82 +618,11 @@ def evaluate(df):
     df_eval.to_csv("EVALUATION.csv", mode='a', index=False, header=False)
     
 
-#        print "eval_mag"    
-        
-# def evaluate(df):
-#     df["vref_diff"] = abs(df.vref - 3.3)
-#     df["xy"] = np.degrees(np.arctan(df.x / df.y))
-#     df["xz"] = np.degrees(np.arctan(df.x / df.z))
-#     df["yz"] = np.degrees(np.arctan(df.y / df.z))
-
-#     df["xy_diff"] = np.nan
-#     df["xz_diff"] = np.nan
-#     df["yz_diff"] = np.nan
-
-#     for i in df.position.unique():
-#         reference_row = df[(df.node_id == 65535) & (df.accel == 2) & (df.position == i)]
-#         if not reference_row.empty:
-#             reference_xz = reference_row.xz.values[0]
-#             reference_xy = reference_row.xy.values[0]
-#             reference_yz = reference_row.yz.values[0]
-
-#             df.xz_diff[df.position == i] = abs(df.xz[df.position == i] - reference_xz)
-#             df.xy_diff[df.position == i] = abs(df.xy[df.position == i] - reference_xy)
-#             df.yz_diff[df.position == i] = abs(df.yz[df.position == i] - reference_yz)
-#         else:
-#             print(f"Warning: No reference data found for position {i}. Skipping calculations for this position.")
-
-#     df.xy_diff[df.xy_diff > 170] = 180 - df.xy_diff
-#     df.xz_diff[df.xz_diff > 170] = 180 - df.xz_diff
-#     df.yz_diff[df.yz_diff > 170] = 180 - df.yz_diff
-
-#     for i in df.position.unique():
-#         if i in (0, 1):
-#             df.yz_diff[df.position == i] = 0
-#         elif i in (2, 3):
-#             df.xz_diff[df.position == i] = 0
-#         elif i in (4, 5):
-#             df.xy_diff[df.position == i] = 0
-
-#     df["eval_xyz"] = 0
-#     df["eval_xyz"][(df.xy_diff < 1.5) & (df.xz_diff < 1.5) & (df.yz_diff < 1.5)] = 1
-#     df["eval_vref"] = 0
-#     df["eval_vref"][(df.vref_diff < 0.3)] = 1
-#     df["mag"] = np.sqrt(df.x**2 + df.y**2 + df.z**2)
-#     df["eval_mag"] = 0
-#     df.eval_mag[(df.mag > 13058) & (df.mag < 13258)] = 1
-
-#     if not os.path.isfile("DF_EVALUATION.csv"):
-#         df.to_csv("DF_EVALUATION.csv", index=False)
-#     else:
-#         df.to_csv("DF_EVALUATION.csv", mode="a", header=False, index=False)
-
-#     df_eval = pd.DataFrame(columns=["node_id", "eval_vref", "eval_mag", "eval_xyz"])
-
-#     if not os.path.isfile("EVALUATION.csv"):
-#         df_eval.to_csv("EVALUATION.csv", index=False)
-
-#     j = 0
-#     for i in df.node_id[df.node_id != 65535].unique():
-#         status_vref = "FAILED" if df[(df.node_id == i) & (df.eval_vref == 0)].size > 0 else "PASSED"
-#         status_mag = "FAILED" if df[(df.node_id == i) & (df.eval_mag == 0)].size > 0 else "PASSED"
-#         status_xyz = "FAILED" if df[(df.node_id == i) & (df.eval_xyz == 0)].size > 0 else "PASSED"
-
-#         df_eval.loc[j] = [int(i), status_vref, status_mag, status_xyz]
-#         j += 1
-
-#     print(df_eval)
-#     df_eval.to_csv("EVALUATION.csv", mode="a", index=False, header=False)        
-              
-
-
 ####################################################################
-
 
 def Count_Val_Rec(MATRIX): #check if VMM's matrices are 6 by 3
     s0 = MATRIX.shape[0]
     #s1 = MATRIX.shape[1]
-#    print sheight
     for i in range (0,s0):
         for j in range(0,1):
             current_matrix = MATRIX[i,j]
@@ -1000,17 +631,14 @@ def Count_Val_Rec(MATRIX): #check if VMM's matrices are 6 by 3
             if len(current_matrix) == 6:
                 #current_id = MATRIX[i,2]
                 printstr = 'NODE ' + fid + ': complete'
-                #printstr = 'NODE' + str(int(current_id)) + ': complete'
                 print (printstr)
             elif len(current_matrix) < 6:
                 #current_id = MATRIX[i,2]
                 printstr = 'NODE ' + fid + ': INCOMPLETE VALIDATION DATA'
-                #printstr = 'NODE' + str(int(current_id)) + ': INCOMPLETE VALIDATION DATA'
                 print (printstr)
             elif len(current_matrix) > 6:
                 #current_id = MATRIX[i,2]
                 printstr = 'NODE ' + fid + ': TOO MUCH DATA'
-                #printstr = 'NODE' + str(int(current_id)) + ': TOO MUCH DATA'
                 print (printstr)
             
 def LOG_VAL(MATRIX, SUMMARY, id1,id2):
@@ -1029,12 +657,9 @@ def LOG_VAL(MATRIX, SUMMARY, id1,id2):
     for i in range(0,sheight):
         current_id = id2_list[i] # current id being checked
         index_current_id = id1_list.index(current_id) # index of current id from id1_list
-        #printstr = 'current_id: ' + str(current_id) + ' index_current_id: ' + str(index_current_id) + ' SUMMARY_lookup[index_current_id]: '+ str(SUMMARY_lookup[index_current_id])
-        #print printstr
         if SUMMARY_lookup[index_current_id] == current_id:
-            #print 'write the matrix here'
-            for j in range(0,2):
-                TO_WRITE = MATRIX[i,j]
+            for j in range(0, 2):
+                TO_WRITE = MATRIX[i, j]
                 s0 = TO_WRITE.shape[0]
                 s1 = TO_WRITE.shape[1]
                 uid_to_write = int(MATRIX[i,2])
@@ -1047,7 +672,6 @@ def LOG_VAL(MATRIX, SUMMARY, id1,id2):
                         f.write(str(int(TO_WRITE[x,y])))
                         f.write(',')
                 f.write('\n')
-                #print 'uid_to_write: ' , uid_to_write
         else:
             print (' may MALI')
             
@@ -1058,18 +682,13 @@ def calibfactors(MATRIX, uid):
     length = len(MATRIX)
     
     filename = '.\\' + str(jig_name) + '_PARAMETERS.csv'
-    
     ser = OpenSerial(com_port)
     ser.close()
     ser.open()
     time.sleep(1.5)
-#    str_to_send = 'c'
-#    ser.write('c')
-#    time.sleep(1.5)
     rows = 0
     columns = 0
     uid = np.matrix(uid)
-    # uid = np.array(uid)
     uid = uid.T
     
     try:
@@ -1083,18 +702,10 @@ def calibfactors(MATRIX, uid):
             #id_to_send = int(MATRIX[columns,2])
             try:
                 print ('id_to send =' ,id_to_send)
-    #            ser.write(str(id_to_send))
-    #            ser.write('#')
                 which_axel = str(rows + 1);
-    #            ser.write(which_axel)
-    #            ser.write('#')
                 
                 str_to_send = 'c{}#{}#'.format(id_to_send,which_axel)
                 str_to_save = '{},{},'.format(id_to_send,which_axel)
-    #            f.write(str(id_to_send))#np.matrix(data_set)
-    #            f.write(',')
-    #            f.write(str(which_axel))
-    #            f.write(',')
                 
                 dummy = MATRIX[columns,rows]
                 for j in range(0,4): #4
@@ -1105,15 +716,11 @@ def calibfactors(MATRIX, uid):
                             
                         str_to_send += '{}#'.format(int(dummy[j,i]))
                         str_to_save += '{},'.format(int(dummy[j,i]))
-    #                    f.write(str(dummy[j,i]))
-    #                    f.write(',')
-                        
-    #                    time.sleep(0.10) # kulang yung 0.15 
+
                 str_to_send += '<'
                 ser.write(str_to_send.encode())
                 print (str_to_send)
                 str_to_save += '\n'
-    #            f.write('\n') #??
                 f.write(str_to_save)
                 while ser.read(2).decode("utf-8") != '&&':
                     data = ser.readline().decode("utf-8");
@@ -1157,7 +764,7 @@ def Write_Save(MATRIX): #pass MM here
     mheight = len(MATRIX)
     global jig_name,node_id
     uid = np.matrix(node_id)
-    # uid = np.array(node_id)
+
     uid = uid.T
     MATRIX = np.concatenate((MATRIX,uid),axis=1)
     filename = '.\\' + str(jig_name) + '_Log.csv'
@@ -1177,14 +784,14 @@ def Write_Save(MATRIX): #pass MM here
         for rows in range(0,2):
             id_to_send = int(MATRIX[columns,2])
             print ('id_to send =' ,id_to_send)
-            #write to serial
+
             ser.write(str(id_to_send).encode())
             ser.write('#'.encode())
             which_axel = str(rows + 1);
             ser.write(which_axel.encode())
             ser.write('#'.encode())
-            #write to file
-            f.write(str(id_to_send))#np.matrix(data_set)
+
+            f.write(str(id_to_send))
             f.write(',')
             f.write(str(which_axel))
             f.write(',')
@@ -1196,23 +803,14 @@ def Write_Save(MATRIX): #pass MM here
                     f.write(str(dummy[j,i]))
                     f.write(',')
             ser.write('<'.encode())
-            f.write('\n') #??
+            f.write('\n')
             while ser.read(2).decode("utf-8") != '&&':
                 data = ser.readline().decode("utf-8")
-                #pass
-            #print '&& received'
+
     f.close()
     ser.close()
         
 
-#def main():
-#    global M
 
-    
 if __name__ == '__main__':
-#    app = simpleapp_tk(None)
-#    app.title('CALIBRATION')
-#    app.mainloop()
     main()
-    # main_2()
-    
